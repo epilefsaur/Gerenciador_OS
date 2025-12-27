@@ -348,6 +348,21 @@
       display: flex;
       gap: 8px;
     }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -381,7 +396,7 @@
         <input class="input" id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
         
         <div style="height:16px"></div>
-        <button class="btn primary" type="submit" style="width:100%">
+        <button class="btn primary" type="submit" style="width:100%" id="btnLogin">
           <span>Entrar</span>
         </button>
         
@@ -503,7 +518,9 @@
           <div class="row" style="align-items: center; justify-content: space-between; margin-bottom: 20px;">
             <div>
               <h2 class="h2">Gerenciar Usuários</h2>
-              <div class="small">Adicione, edite ou remova usuários do sistema.</div>
+              <div class="small" style="background: #f0f9ff; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #bae6fd;">
+                <strong>⚠️ Nota:</strong> O usuário será criado sem necessidade de confirmação por email. A senha será a informada abaixo.
+              </div>
             </div>
             <button class="btn primary" id="btnAddUser">+ Adicionar Usuário</button>
           </div>
@@ -699,8 +716,8 @@
       
       <div style="display:flex; gap:10px; justify-content:flex-end">
         <button class="btn" id="btnCloseEdit">Cancelar</button>
-        <button class="btn warning" id="btnReopenOS" style="display:none">Reabrir OS</button>
-        <button class="btn primary" id="btnSaveEdit">Salvar Alterações</button>
+        <button class="btn warning" id="btnReopenOS" style="display:none">Reabrir</button>
+        <button class="btn primary" id="btnSaveEdit">Salvar</button>
       </div>
     </div>
   </div>
@@ -709,26 +726,28 @@
   <div id="modalAddUser" class="modal-overlay hidden">
     <div class="modal">
       <h2 class="h1" id="modalUserTitle">Adicionar Usuário</h2>
+      <div class="small" style="background: #f0f9ff; padding: 10px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #bae6fd;">
+        O usuário será criado sem confirmação de email. Ele poderá fazer login imediatamente com a senha informada.
+      </div>
       
-      <div style="height:20px"></div>
+      <div style="height:10px"></div>
       
-      <label class="small">Nome Completo</label>
-      <input class="input" id="newUserName" />
-      
-      <div style="height:12px"></div>
-      
-      <label class="small">Email</label>
-      <input class="input" id="newUserEmail" type="email" />
+      <label class="small">Nome Completo *</label>
+      <input class="input" id="newUserName" placeholder="João da Silva" />
       
       <div style="height:12px"></div>
       
-      <label class="small" id="passwordLabel">Senha</label>
-      <input class="input" id="newUserPassword" type="password" />
-      <div class="small" id="passwordHint">Deixe em branco para não alterar a senha.</div>
+      <label class="small">Email *</label>
+      <input class="input" id="newUserEmail" type="email" placeholder="joao@empresa.com" />
       
       <div style="height:12px"></div>
       
-      <label class="small">Papel (Role)</label>
+      <label class="small">Senha *</label>
+      <input class="input" id="newUserPassword" type="password" placeholder="Mínimo 6 caracteres" />
+      
+      <div style="height:12px"></div>
+      
+      <label class="small">Papel (Role) *</label>
       <select class="input" id="newUserRole">
         <option value="TECH">Técnico</option>
         <option value="ANALYST">Analista</option>
@@ -739,7 +758,9 @@
       
       <div style="display:flex; gap:10px; justify-content:flex-end">
         <button class="btn" id="btnCloseAddUser">Cancelar</button>
-        <button class="btn primary" id="btnSaveUser">Salvar Usuário</button>
+        <button class="btn primary" id="btnSaveUser">
+          <span id="btnSaveUserText">Criar Usuário</span>
+        </button>
       </div>
     </div>
   </div>
@@ -792,11 +813,11 @@
             </div>
             <div class="col">
               <label class="small">UF *</label>
-              <input class="input" id="newOSStateAdmin" maxlength="2" />
+              <input class="input" id="newOSStateAdmin" maxlength="2" placeholder="SP" />
             </div>
             <div class="col">
               <label class="small">CEP</label>
-              <input class="input" id="newOSZipAdmin" />
+              <input class="input" id="newOSZipAdmin" placeholder="00000-000" />
             </div>
           </div>
           
@@ -844,7 +865,15 @@
     const BUCKET = "service-order-attachments";
     const STORAGE_KEY = "os_manager_customization";
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+        storage: localStorage
+      }
+    });
 
     // ---------- HELPERS ----------
     const $ = (id) => document.getElementById(id);
@@ -1045,36 +1074,132 @@
       }
     }
 
+    // ---------- FUNÇÕES AUXILIARES ----------
+    function toast(message, type = 'info') {
+      const toast = document.createElement("div");
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'error' ? '#dc2626' : type === 'success' ? '#10b981' : '#2563eb'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: fadeInUp 0.3s, fadeOut 0.3s 2.7s;
+        max-width: 90vw;
+        text-align: center;
+      `;
+      
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Função para garantir perfil do usuário
+    async function ensureProfile(userId, userEmail, userMetadata) {
+      try {
+        // Primeiro tenta buscar o perfil
+        const { data: existingProfile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (fetchError) {
+          console.warn("Erro ao buscar perfil:", fetchError);
+        }
+        
+        // Se não existe, cria
+        if (!existingProfile) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              email: userEmail,
+              full_name: userMetadata?.full_name || '',
+              role: userMetadata?.role || 'TECH',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
+            });
+            
+          if (insertError) {
+            console.error("Erro ao criar perfil:", insertError);
+            throw insertError;
+          }
+          
+          console.log("Perfil criado para:", userEmail);
+          return true;
+        }
+        
+        return true;
+      } catch (err) {
+        console.error("Falha ao garantir perfil:", err);
+        return false;
+      }
+    }
+
     // ---------- LOGIN ----------
     $("formLogin").addEventListener("submit", async (e) => {
       e.preventDefault();
       
       const email = $("loginEmail").value.trim();
       const password = $("loginPassword").value;
+      const btnLogin = $("btnLogin");
       
       if (!email || !password) {
-        toast("Preencha email e senha.");
+        toast("Preencha email e senha.", 'error');
         return;
       }
       
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        // Mostra loading
+        const originalText = btnLogin.innerHTML;
+        btnLogin.innerHTML = '<div class="loading"></div>';
+        btnLogin.disabled = true;
+        
+        // 1. Faz login
+        const { data, error } = await supabase.auth.signInWithPassword({ 
+          email, 
+          password 
+        });
         
         if (error) throw error;
         
         me = { id: data.user.id, email: data.user.email };
         
+        // 2. Garante que tem perfil
+        await ensureProfile(data.user.id, data.user.email, data.user.user_metadata);
+        
+        // 3. Busca perfil atualizado
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("id, full_name, role")
           .eq("id", data.user.id)
           .maybeSingle();
           
-        if (profileError) throw profileError;
-        if (!profileData) throw new Error("Perfil não encontrado.");
+        if (profileError) {
+          console.error("Erro ao buscar perfil:", profileError);
+          toast("Erro ao carregar perfil. Recarregue a página.", 'error');
+          return;
+        }
+        
+        if (!profileData) {
+          toast("Perfil não encontrado. Contate o administrador.", 'error');
+          await supabase.auth.signOut();
+          me = null;
+          render();
+          return;
+        }
         
         profile = profileData;
         
+        // Limpa formulário
         $("loginEmail").value = "";
         $("loginPassword").value = "";
         
@@ -1083,7 +1208,11 @@
         
       } catch (err) {
         console.error("Erro no login:", err);
-        toast(err.message || "Erro ao fazer login.");
+        toast(err.message || "Erro ao fazer login.", 'error');
+      } finally {
+        // Restaura botão
+        btnLogin.innerHTML = '<span>Entrar</span>';
+        btnLogin.disabled = false;
       }
     });
 
@@ -1094,9 +1223,10 @@
         me = null;
         profile = null;
         render();
+        toast("Desconectado com sucesso.", 'success');
       } catch (err) {
         console.error("Erro no logout:", err);
-        toast("Erro ao sair: " + err.message);
+        toast("Erro ao sair: " + err.message, 'error');
       }
     });
 
@@ -1140,7 +1270,7 @@
         updateAdminStats();
       } catch (err) {
         console.error("Erro ao carregar ordens:", err);
-        toast("Erro ao carregar ordens.");
+        toast("Erro ao carregar ordens.", 'error');
       }
     }
 
@@ -1323,18 +1453,27 @@
 
     async function loadAdminUsers() {
       try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, email, full_name, role, created_at")
-          .order("created_at", { ascending: false });
-          
-        if (error) throw error;
+        // Usa função RPC para listar usuários
+        const { data, error } = await supabase.rpc('list_all_users');
         
-        adminUsers = data || [];
+        if (error) {
+          console.warn("Erro na RPC, tentando query direta:", error);
+          // Fallback: query direta
+          const { data: directData, error: directError } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, role, created_at')
+            .order('created_at', { ascending: false });
+            
+          if (directError) throw directError;
+          adminUsers = directData || [];
+        } else {
+          adminUsers = data || [];
+        }
+        
         renderAdminUsers();
       } catch (err) {
         console.error("Erro ao carregar usuários:", err);
-        toast("Erro ao carregar usuários.");
+        toast("Erro ao carregar usuários: " + err.message, 'error');
       }
     }
 
@@ -1360,7 +1499,7 @@
         card.className = "card";
         
         const roleClass = user.role.toLowerCase();
-        const userInitials = (user.full_name || user.email)
+        const userInitials = (user.full_name || user.email || '')
           .split(" ")
           .map(n => n[0])
           .join("")
@@ -1375,10 +1514,10 @@
               </div>
               <div>
                 <div style="font-weight:600">${escapeHtml(user.full_name || "Sem nome")}</div>
-                <div class="small">${escapeHtml(user.email)}</div>
+                <div class="small">${escapeHtml(user.email || "Sem email")}</div>
                 <div style="margin-top:6px">
                   <span class="badge ${roleClass}">${user.role}</span>
-                  <span class="small">Desde ${new Date(user.created_at).toLocaleDateString()}</span>
+                  <span class="small">${new Date(user.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
@@ -1410,28 +1549,20 @@
       
       if (user) {
         modalTitle.textContent = "Editar Usuário";
-        passwordLabel.textContent = "Nova Senha";
-        passwordHint.textContent = "Deixe em branco para não alterar a senha.";
-        
         $("newUserName").value = user.full_name || "";
         $("newUserEmail").value = user.email || "";
         $("newUserPassword").value = "";
         $("newUserRole").value = user.role || "TECH";
-        
-        // Desabilita email se estiver editando
         $("newUserEmail").disabled = true;
+        $("btnSaveUserText").textContent = "Atualizar Usuário";
       } else {
         modalTitle.textContent = "Adicionar Usuário";
-        passwordLabel.textContent = "Senha";
-        passwordHint.textContent = "Informe uma senha para o novo usuário.";
-        
         $("newUserName").value = "";
         $("newUserEmail").value = "";
         $("newUserPassword").value = "";
         $("newUserRole").value = "TECH";
-        
-        // Habilita email para novo usuário
         $("newUserEmail").disabled = false;
+        $("btnSaveUserText").textContent = "Criar Usuário";
       }
       
       show($("modalAddUser"));
@@ -1442,23 +1573,34 @@
       const email = $("newUserEmail").value.trim();
       const password = $("newUserPassword").value;
       const role = $("newUserRole").value;
+      const btnSaveUser = $("btnSaveUser");
       
       if (!name) {
-        toast("Informe o nome do usuário.");
+        toast("Informe o nome do usuário.", 'error');
         return;
       }
       
-      if (!editingUserId && !email) {
-        toast("Informe o email do usuário.");
+      if (!email) {
+        toast("Informe o email do usuário.", 'error');
         return;
       }
       
       if (!editingUserId && !password) {
-        toast("Informe uma senha para o novo usuário.");
+        toast("Informe uma senha para o novo usuário.", 'error');
+        return;
+      }
+      
+      if (password && password.length < 6) {
+        toast("A senha deve ter pelo menos 6 caracteres.", 'error');
         return;
       }
       
       try {
+        // Mostra loading
+        const originalText = btnSaveUser.innerHTML;
+        btnSaveUser.innerHTML = '<div class="loading"></div>';
+        btnSaveUser.disabled = true;
+        
         if (editingUserId) {
           // Editar usuário existente
           const updates = {
@@ -1466,6 +1608,7 @@
             role: role
           };
           
+          // Atualiza perfil
           const { error } = await supabase
             .from("profiles")
             .update(updates)
@@ -1473,18 +1616,22 @@
             
           if (error) throw error;
           
-          // Se houver senha, atualiza via Auth
+          // Se houver senha, tenta atualizar (pode não ter permissão)
           if (password) {
-            const { error: authError } = await supabase.auth.updateUser({
-              password: password
-            });
-            
-            if (authError) {
-              console.warn("Não foi possível atualizar a senha:", authError);
+            try {
+              const { error: authError } = await supabase.auth.updateUser({
+                password: password
+              });
+              
+              if (authError) {
+                console.warn("Não foi possível atualizar a senha (pode exigir relogin):", authError);
+              }
+            } catch (authErr) {
+              console.warn("Erro ao atualizar senha:", authErr);
             }
           }
           
-          toast("Usuário atualizado com sucesso!");
+          toast("Usuário atualizado com sucesso!", 'success');
         } else {
           // Criar novo usuário
           const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -1498,9 +1645,39 @@
             }
           });
           
-          if (authError) throw authError;
-          
-          toast("Usuário criado com sucesso! Verifique o email.");
+          if (authError) {
+            // Se usuário já existe
+            if (authError.message.includes('already registered') || 
+                authError.message.includes('User already registered')) {
+              
+              toast("Email já registrado. Atualizando perfil...", 'warning');
+              
+              // Encontra o usuário existente e atualiza perfil
+              const { data: existingUser } = await supabase.auth.admin.listUsers();
+              const user = existingUser?.users?.find(u => u.email === email);
+              
+              if (user) {
+                // Atualiza perfil
+                const { error: profileError } = await supabase
+                  .from('profiles')
+                  .upsert({
+                    id: user.id,
+                    email: email,
+                    full_name: name,
+                    role: role
+                  }, {
+                    onConflict: 'id'
+                  });
+                  
+                if (profileError) throw profileError;
+                toast(`Perfil de ${name} atualizado!`, 'success');
+              }
+            } else {
+              throw authError;
+            }
+          } else {
+            toast(`Usuário ${name} criado com sucesso!`, 'success');
+          }
         }
         
         hide($("modalAddUser"));
@@ -1517,7 +1694,11 @@
         
       } catch (err) {
         console.error("Erro ao salvar usuário:", err);
-        toast("Erro ao salvar usuário: " + err.message);
+        toast("Erro: " + err.message, 'error');
+      } finally {
+        // Restaura botão
+        btnSaveUser.innerHTML = `<span id="btnSaveUserText">${editingUserId ? 'Atualizar' : 'Criar'} Usuário</span>`;
+        btnSaveUser.disabled = false;
       }
     }
 
@@ -1527,7 +1708,7 @@
       }
       
       try {
-        // Primeiro remove o profile
+        // Remove o perfil (usuário do Auth ainda existe)
         const { error: profileError } = await supabase
           .from("profiles")
           .delete()
@@ -1535,15 +1716,12 @@
           
         if (profileError) throw profileError;
         
-        // Nota: Remover do Auth requer admin API key
-        // Aqui apenas removemos o profile, o usuário ainda existe no Auth
-        
-        toast("Usuário removido com sucesso!");
+        toast("Usuário removido com sucesso!", 'success');
         await loadAdminUsers();
         
       } catch (err) {
         console.error("Erro ao remover usuário:", err);
-        toast("Erro ao remover usuário: " + err.message);
+        toast("Erro ao remover usuário: " + err.message, 'error');
       }
     }
 
@@ -1591,7 +1769,7 @@
         };
         
         if (!updates.title) {
-          toast("O título é obrigatório.");
+          toast("O título é obrigatório.", 'error');
           return;
         }
         
@@ -1602,13 +1780,13 @@
           
         if (error) throw error;
         
-        toast("Ordem atualizada com sucesso!");
+        toast("Ordem atualizada com sucesso!", 'success');
         hide($("modalEditOS"));
         await loadAdminOrders();
         
       } catch (err) {
         console.error("Erro ao atualizar ordem:", err);
-        toast("Erro ao atualizar ordem: " + err.message);
+        toast("Erro ao atualizar ordem: " + err.message, 'error');
       }
     }
 
@@ -1626,12 +1804,12 @@
           
         if (error) throw error;
         
-        toast("Ordem reaberta com sucesso!");
+        toast("Ordem reaberta com sucesso!", 'success');
         await loadAdminOrders();
         
       } catch (err) {
         console.error("Erro ao reabrir ordem:", err);
-        toast("Erro ao reabrir ordem: " + err.message);
+        toast("Erro ao reabrir ordem: " + err.message, 'error');
       }
     }
 
@@ -1705,18 +1883,18 @@
       const created_by = $("newOSAnalystAdmin").value || me.id;
       
       if (!title) {
-        toast("Informe o título.");
+        toast("Informe o título.", 'error');
         return;
       }
       
       if (!address_line1 || !city || !state) {
-        toast("Informe endereço/cidade/UF.");
+        toast("Informe endereço/cidade/UF.", 'error');
         return;
       }
       
       const checklist = readChecklistUIAdmin();
       if (!checklist.length) {
-        toast("Inclua pelo menos 1 item no checklist.");
+        toast("Inclua pelo menos 1 item no checklist.", 'error');
         return;
       }
       
@@ -1756,13 +1934,13 @@
           
         if (e2) throw e2;
         
-        toast("OS criada com sucesso!");
+        toast("OS criada com sucesso!", 'success');
         hide($("modalNewOSAdmin"));
         await loadAdminOrders();
         
       } catch (err) {
         console.error("Erro ao criar OS:", err);
-        toast(err.message ?? "Erro ao criar OS.");
+        toast(err.message ?? "Erro ao criar OS.", 'error');
       } finally {
         $("btnSaveNewOSAdmin").disabled = false;
       }
@@ -1782,6 +1960,283 @@
         show($(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`));
       });
     });
+
+    // ---------- ANALYST FUNCTIONS ----------
+    async function loadAnalystOrders() {
+      try {
+        const status = $("analystStatus").value;
+        
+        let q = supabase.from("service_orders").select("*").order("created_at", { ascending: false });
+        if (status !== "ALL") q = q.eq("status", status);
+        
+        const { data, error } = await q;
+        if (error) {
+          toast(error.message, 'error');
+          return;
+        }
+        
+        analystOrders = data || [];
+        renderAnalystCounts(analystOrders);
+        renderAnalystList(analystOrders);
+      } catch (err) {
+        console.error("Erro ao carregar ordens:", err);
+        toast("Erro ao carregar ordens.", 'error');
+      }
+    }
+
+    function renderAnalystCounts(orders) {
+      const c = {};
+      for (const o of orders) c[o.status] = (c[o.status] ?? 0) + 1;
+      $("analystCounts").innerHTML = `
+        <span class="badge">NEW ${c["NEW"] ?? 0}</span>
+        <span class="badge">ASSIGNED ${c["ASSIGNED"] ?? 0}</span>
+        <span class="badge">IN_PROGRESS ${c["IN_PROGRESS"] ?? 0}</span>
+        <span class="badge">DONE ${c["DONE"] ?? 0}</span>
+      `;
+    }
+
+    function renderAnalystList(orders) {
+      const el = $("analystList");
+      el.innerHTML = "";
+
+      if (!orders.length) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "Sem OS para o filtro selecionado.";
+        el.appendChild(empty);
+        return;
+      }
+
+      for (const o of orders) {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:900">${escapeHtml(o.title)}</div>
+              <div class="small">${escapeHtml(o.city)} - ${escapeHtml(o.state)} • ${escapeHtml(o.address_line1)}</div>
+              <div class="kv" style="margin-top:6px">
+                <span class="badge">${o.status}</span>
+                <span class="badge">P${String(o.priority)}</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center">
+              <button class="btn" data-role="assign">${o.assigned_to ? "Reatribuir" : "Atribuir"}</button>
+            </div>
+          </div>
+        `;
+        card.querySelector('[data-role="assign"]').addEventListener("click", () => openAssignPanel(o));
+        el.appendChild(card);
+      }
+    }
+
+    // ---------- TECH FUNCTIONS ----------
+    async function loadTechOrders() {
+      try {
+        // Para técnicos, busca apenas OS atribuídas a ele
+        const { data, error } = await supabase
+          .from("service_orders")
+          .select("*")
+          .or(`assigned_to.eq.${me.id},status.eq.NEW`)
+          .order("updated_at", { ascending: false });
+          
+        if (error) {
+          console.error("Erro detalhado ao carregar ordens do técnico:", error);
+          throw error;
+        }
+        
+        techOrders = data || [];
+        renderTechList(techOrders);
+      } catch (err) {
+        console.error("Erro ao carregar ordens do técnico:", err);
+        toast("Erro ao carregar ordens: " + err.message, 'error');
+      }
+    }
+
+    function renderTechList(orders) {
+      const el = $("techList");
+      el.innerHTML = "";
+
+      if (!orders.length) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "Nenhuma OS atribuída no momento.";
+        el.appendChild(empty);
+        return;
+      }
+
+      for (const o of orders) {
+        const card = document.createElement("div");
+        card.className = "card click";
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:900">${escapeHtml(o.title)}</div>
+              <div class="small">${escapeHtml(o.city)} - ${escapeHtml(o.state)} • ${escapeHtml(o.address_line1)}</div>
+              <div class="kv" style="margin-top:6px">
+                <span class="badge">${o.status}</span>
+                <span class="badge">P${String(o.priority)}</span>
+              </div>
+            </div>
+            <div class="small">Atualizado: ${new Date(o.updated_at).toLocaleString()}</div>
+          </div>
+        `;
+        card.addEventListener("click", () => openTechDetail(o.id));
+        el.appendChild(card);
+      }
+    }
+
+    async function openTechDetail(orderId) {
+      try {
+        // Busca ordem
+        const { data: order, error: e1 } = await supabase
+          .from("service_orders")
+          .select("*")
+          .eq("id", orderId)
+          .single();
+        if (e1) {
+          toast(e1.message, 'error');
+          return;
+        }
+
+        techSelectedOrder = order;
+
+        // Busca checklist
+        const { data: chk, error: e2 } = await supabase
+          .from("service_order_checklist_items")
+          .select("*")
+          .eq("service_order_id", orderId)
+          .order("sort", { ascending: true });
+        if (e2) {
+          console.warn("Erro ao buscar checklist:", e2);
+          techChecklist = [];
+        } else {
+          techChecklist = chk || [];
+        }
+
+        // Busca anexos
+        const { data: att, error: e3 } = await supabase
+          .from("service_order_attachments")
+          .select("*")
+          .eq("service_order_id", orderId)
+          .order("created_at", { ascending: false });
+        if (e3) {
+          console.warn("Erro ao buscar anexos:", e3);
+          techAttachments = [];
+        } else {
+          techAttachments = att || [];
+        }
+
+        renderTechDetail();
+        show(panelTechDetail);
+      } catch (err) {
+        console.error("Erro ao abrir detalhe:", err);
+        toast("Erro ao carregar detalhes: " + err.message, 'error');
+      }
+    }
+
+    function renderTechDetail() {
+      const o = techSelectedOrder;
+      if (!o) return;
+
+      $("techTitle").textContent = o.title;
+      $("techSub").textContent = `${o.city}-${o.state} • ${o.address_line1}`;
+      $("techStatus").textContent = o.status;
+
+      const pendingRequired = techChecklist.filter(i => i.required && !i.checked).length;
+      $("techPending").textContent = `Checklist obrigatório pendente: ${pendingRequired}`;
+
+      // Botões
+      $("btnStart").classList.toggle("hidden", !(o.status === "ASSIGNED" || o.status === "NEW"));
+      $("btnFinish").classList.toggle("hidden", !(o.status === "IN_PROGRESS"));
+      $("btnFinish").disabled = pendingRequired > 0;
+
+      // Maps
+      const mapsUrl = (o.lat && o.lng)
+        ? `https://www.google.com/maps?q=${o.lat},${o.lng}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${o.address_line1}, ${o.city} - ${o.state}`)}`;
+      $("btnMaps").href = mapsUrl;
+
+      // Checklist UI
+      const chkEl = $("techChecklist");
+      chkEl.innerHTML = "";
+      for (const i of techChecklist) {
+        const item = document.createElement("div");
+        item.className = "card";
+        item.style.padding = "10px";
+        item.innerHTML = `
+          <label style="display:flex; gap:10px; align-items:center">
+            <input type="checkbox" ${i.checked ? "checked" : ""} />
+            <div>
+              <div style="font-weight:800">
+                ${escapeHtml(i.label)} ${i.required ? '<span class="badge">Obrigatório</span>' : '<span class="badge">Opcional</span>'}
+              </div>
+              <div class="small">${i.checked_at ? `Concluído em ${new Date(i.checked_at).toLocaleString()}` : "Pendente"}</div>
+            </div>
+          </label>
+        `;
+        const cb = item.querySelector("input[type=checkbox]");
+        cb.disabled = (o.status === "DONE" || o.status === "CANCELED");
+        cb.addEventListener("change", async (e) => {
+          try {
+            cb.disabled = true;
+            const checked = e.target.checked;
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Não autenticado");
+
+            const { error } = await supabase
+              .from("service_order_checklist_items")
+              .update({
+                checked,
+                checked_at: checked ? new Date().toISOString() : null,
+                checked_by: checked ? user.id : null
+              })
+              .eq("id", i.id);
+
+            if (error) throw error;
+
+            await openTechDetail(o.id);
+          } catch (err) {
+            toast(err.message ?? "Erro no checklist.", 'error');
+            await openTechDetail(o.id);
+          }
+        });
+
+        chkEl.appendChild(item);
+      }
+
+      // Photos
+      const photosEl = $("techPhotos");
+      photosEl.innerHTML = "";
+      if (techAttachments.length > 0) {
+        for (const a of techAttachments) {
+          try {
+            const { data } = await supabase.storage.from(BUCKET).createSignedUrl(a.storage_path, 60 * 30);
+            if (data?.signedUrl) {
+              const link = document.createElement("a");
+              link.href = data.signedUrl;
+              link.target = "_blank";
+              link.rel = "noreferrer";
+              link.innerHTML = `<img class="thumb" src="${data.signedUrl}" alt="foto" />`;
+              photosEl.appendChild(link);
+            }
+          } catch (err) {
+            console.warn("Erro ao carregar foto:", err);
+          }
+        }
+      }
+      if (!techAttachments.length || photosEl.children.length === 0) {
+        const t = document.createElement("div");
+        t.className = "small";
+        t.textContent = "Sem fotos anexadas.";
+        photosEl.appendChild(t);
+      }
+
+      // Upload input
+      $("photoInput").disabled = (o.status === "DONE" || o.status === "CANCELED");
+    }
 
     // ---------- EVENT LISTENERS ----------
     $("btnAdminRefresh").addEventListener("click", loadAdminOrders);
@@ -1811,7 +2266,7 @@
       if (confirm("Restaurar configurações padrão?")) {
         localStorage.removeItem(STORAGE_KEY);
         loadCustomization();
-        toast("Configurações redefinidas.");
+        toast("Configurações redefinidas.", 'success');
       }
     });
     
@@ -1861,90 +2316,10 @@
       reader.readAsDataURL(file);
     });
 
-    // ---------- ANALYST FUNCTIONS (mantidas do código original) ----------
-    window.loadAnalystOrders = async function() {
-      try {
-        const status = $("analystStatus").value;
-        
-        let q = supabase.from("service_orders").select("*").order("created_at", { ascending: false });
-        if (status !== "ALL") q = q.eq("status", status);
-        
-        const { data, error } = await q;
-        if (error) {
-          toast(error.message);
-          return;
-        }
-        
-        analystOrders = data || [];
-        renderAnalystCounts(analystOrders);
-        renderAnalystList(analystOrders);
-      } catch (err) {
-        console.error("Erro ao carregar ordens:", err);
-        toast("Erro ao carregar ordens.");
-      }
-    };
-
-    // ---------- TECH FUNCTIONS (mantidas do código original) ----------
-    window.loadTechOrders = async function() {
-      try {
-        const { data, error } = await supabase
-          .from("service_orders")
-          .select("*")
-          .order("updated_at", { ascending: false });
-          
-        if (error) {
-          toast(error.message);
-          return;
-        }
-        
-        techOrders = data || [];
-        renderTechList(techOrders);
-      } catch (err) {
-        console.error("Erro ao carregar ordens:", err);
-        toast("Erro ao carregar ordens.");
-      }
-    };
-
-    // ---------- UTILS ----------
-    function toast(message) {
-      const toast = document.createElement("div");
-      toast.textContent = message;
-      toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--primary);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 10px;
-        font-weight: 500;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: fadeInUp 0.3s, fadeOut 0.3s 2.7s;
-      `;
-      
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // Estilos para animação do toast
-    const style = document.createElement("style");
-    style.textContent = `
-      @keyframes fadeInUp {
-        from { opacity: 0; transform: translate(-50%, 20px); }
-        to { opacity: 1; transform: translate(-50%, 0); }
-      }
-      @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-
     // ---------- BOOTSTRAP ----------
     async function bootstrap() {
       try {
+        // Verifica sessão
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
@@ -1957,14 +2332,24 @@
         
         me = { id: session.user.id, email: session.user.email };
         
+        // Garante perfil
+        await ensureProfile(session.user.id, session.user.email, session.user.user_metadata);
+        
+        // Busca perfil
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("id, full_name, role")
           .eq("id", session.user.id)
           .maybeSingle();
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Erro ao buscar perfil:", profileError);
+          toast("Erro ao carregar perfil. Recarregue a página.", 'error');
+          return;
+        }
+        
         if (!profileData) {
+          toast("Perfil não encontrado. Contate o administrador.", 'error');
           await supabase.auth.signOut();
           me = null;
           render();
@@ -1985,17 +2370,33 @@
 
     // Listener de mudança de auth
     supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event);
+      
       if (event === "SIGNED_OUT") {
         me = null;
         profile = null;
         render();
-      } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+      } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
         bootstrap();
       }
     });
 
     // Inicializa
     bootstrap();
+    
+    // Adiciona estilos CSS para animações
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translate(-50%, 20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
   </script>
 </body>
 </html>
