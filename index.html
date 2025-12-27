@@ -16,6 +16,8 @@
       --danger: #b42318;
       --warning: #f59e0b;
       --success: #10b981;
+      --header-bg: #fff;
+      --header-text: #111;
     }
     
     * { box-sizing: border-box; }
@@ -34,10 +36,10 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: var(--card);
+      background: var(--header-bg);
+      color: var(--header-text);
       border-bottom: 1px solid var(--border);
       backdrop-filter: blur(10px);
-      background: rgba(255, 255, 255, 0.95);
     }
     
     .topbar-inner {
@@ -66,7 +68,7 @@
     .brand-name {
       font-size: 18px;
       font-weight: 800;
-      color: var(--primary);
+      color: var(--header-text);
     }
     
     .container {
@@ -134,6 +136,8 @@
     .badge.canceled { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
     .badge.priority { background: #f3f4f6; color: #4b5563; }
     .badge.admin { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+    .badge.analyst { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .badge.tech { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
     
     .input, select, textarea {
       width: 100%;
@@ -303,6 +307,47 @@
     }
     
     .admin-only { border-left: 3px solid var(--primary); }
+    
+    .user-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-email {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+    
+    .color-picker {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    .color-preview {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border: 1px solid var(--border);
+    }
+    
+    .admin-buttons {
+      display: flex;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
@@ -355,15 +400,8 @@
             <div class="small" id="adminStats"></div>
           </div>
           <div class="col" style="display:flex; gap:10px; justify-content:flex-end">
-            <select class="input" id="adminFilter" style="max-width:200px">
-              <option value="ALL">Todas as OS</option>
-              <option value="NEW">NEW</option>
-              <option value="ASSIGNED">ASSIGNED</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="DONE">DONE</option>
-              <option value="CANCELED">CANCELED</option>
-            </select>
-            <button class="btn primary" id="btnAdminRefresh">Atualizar</button>
+            <button class="btn primary" id="btnNewOSAdmin">+ Nova OS</button>
+            <button class="btn" id="btnAdminRefresh">Atualizar</button>
           </div>
         </div>
       </div>
@@ -379,6 +417,28 @@
 
       <!-- ORDENS -->
       <div id="tabOrders" class="tab-content">
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="row">
+            <div class="col">
+              <label class="small">Filtrar por status:</label>
+              <select class="input" id="adminFilter">
+                <option value="ALL">Todas as OS</option>
+                <option value="NEW">NEW</option>
+                <option value="ASSIGNED">ASSIGNED</option>
+                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                <option value="DONE">DONE</option>
+                <option value="CANCELED">CANCELED</option>
+              </select>
+            </div>
+            <div class="col">
+              <label class="small">Filtrar por técnico:</label>
+              <select class="input" id="adminFilterTech">
+                <option value="ALL">Todos os técnicos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
         <div id="adminList" class="list"></div>
       </div>
 
@@ -386,7 +446,7 @@
       <div id="tabCustomize" class="tab-content hidden">
         <div class="card">
           <h2 class="h2">Personalização do Sistema</h2>
-          <div class="small">Configure o nome e logo da empresa que aparecerão no sistema.</div>
+          <div class="small">Configure a aparência do sistema.</div>
           
           <div style="height:20px"></div>
           
@@ -404,13 +464,29 @@
           
           <div style="height:20px"></div>
           
+          <h3 class="h3">Cores do Cabeçalho</h3>
+          
           <div class="row">
             <div class="col">
-              <label class="small">Visualização:</label>
-              <div class="card" style="padding:20px; text-align:center">
-                <img id="logoPreview" class="brand-logo hidden" style="margin:0 auto 12px" alt="Logo Preview" />
-                <div id="namePreview" class="brand-name">Nome da Empresa</div>
-              </div>
+              <label class="small">Cor de Fundo</label>
+              <input type="color" id="headerBgColor" class="color-picker" value="#ffffff" />
+              <input type="text" id="headerBgColorText" class="input" value="#ffffff" style="margin-top: 8px;" placeholder="#ffffff" />
+            </div>
+            <div class="col">
+              <label class="small">Cor do Texto</label>
+              <input type="color" id="headerTextColor" class="color-picker" value="#111111" />
+              <input type="text" id="headerTextColorText" class="input" value="#111111" style="margin-top: 8px;" placeholder="#111111" />
+            </div>
+          </div>
+          
+          <div class="color-preview" id="headerPreview" style="background: var(--header-bg); color: var(--header-text); padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div id="namePreview" style="font-weight: 800; font-size: 18px;">Nome da Empresa</div>
+              <div style="font-size: 12px;">Exemplo de texto no cabeçalho</div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge">Admin</span>
+              <button class="btn" style="font-size: 12px; padding: 6px 12px;">Botão</button>
             </div>
           </div>
           
@@ -424,23 +500,21 @@
       <!-- USUÁRIOS -->
       <div id="tabUsers" class="tab-content hidden">
         <div class="card">
-          <h2 class="h2">Gerenciar Usuários</h2>
-          <div class="small">Adicione ou edite usuários do sistema.</div>
-          
-          <div style="height:20px"></div>
-          
-          <button class="btn primary" id="btnAddUser">+ Adicionar Usuário</button>
-          
-          <div style="height:16px"></div>
+          <div class="row" style="align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+              <h2 class="h2">Gerenciar Usuários</h2>
+              <div class="small">Adicione, edite ou remova usuários do sistema.</div>
+            </div>
+            <button class="btn primary" id="btnAddUser">+ Adicionar Usuário</button>
+          </div>
           
           <div id="usersList" class="list"></div>
         </div>
       </div>
     </section>
 
-    <!-- ANALYST (mantido igual) -->
+    <!-- ANALYST -->
     <section id="viewAnalyst" class="hidden">
-      <!-- ... conteúdo existente do analista ... -->
       <div class="row" style="align-items:center; justify-content:space-between">
         <div class="col">
           <div class="kv" id="analystCounts"></div>
@@ -462,19 +536,120 @@
       <div id="analystList" class="list"></div>
       <div style="height:12px"></div>
 
-      <!-- Painéis do analista (mantidos) -->
+      <!-- Painéis do analista -->
       <div id="panelNewOS" class="card hidden">
-        <!-- ... conteúdo existente ... -->
+        <h2 class="h2">Nova OS (Analista)</h2>
+        <div class="row">
+          <div class="col">
+            <label class="small">Título</label>
+            <input class="input" id="newTitle" />
+            
+            <div style="height:10px"></div>
+            <label class="small">Descrição</label>
+            <textarea class="input" id="newDesc" rows="4"></textarea>
+            
+            <div style="height:10px"></div>
+            <label class="small">Prioridade (1 alta • 5 baixa)</label>
+            <input class="input" id="newPriority" type="number" min="1" max="5" value="3" />
+            
+            <hr />
+            <h2 class="h2">Endereço</h2>
+            
+            <label class="small">Endereço (linha 1)</label>
+            <input class="input" id="newAddr1" />
+            <div style="height:10px"></div>
+            
+            <label class="small">Complemento</label>
+            <input class="input" id="newAddr2" />
+            <div style="height:10px"></div>
+            
+            <div class="row">
+              <div class="col">
+                <label class="small">Cidade</label>
+                <input class="input" id="newCity" />
+              </div>
+              <div class="col">
+                <label class="small">UF</label>
+                <input class="input" id="newState" />
+              </div>
+              <div class="col">
+                <label class="small">CEP</label>
+                <input class="input" id="newZip" />
+              </div>
+            </div>
+            
+            <div style="height:12px"></div>
+            <div style="display:flex; gap:10px">
+              <button class="btn" id="btnCancelNewOS">Cancelar</button>
+              <button class="btn primary" id="btnSaveNewOS">Salvar</button>
+            </div>
+          </div>
+          
+          <div class="col">
+            <h2 class="h2">Checklist</h2>
+            <div class="small">Itens obrigatórios bloqueiam finalização.</div>
+            <div style="height:10px"></div>
+            
+            <div id="chkList" class="list"></div>
+            <div style="height:10px"></div>
+            <button class="btn" id="btnAddChk">+ Adicionar item</button>
+          </div>
+        </div>
       </div>
       
       <div id="panelAssign" class="card hidden">
-        <!-- ... conteúdo existente ... -->
+        <h2 class="h2">Atribuir OS</h2>
+        <div class="small" id="assignSubtitle"></div>
+        <div style="height:12px"></div>
+        <label class="small">Técnico</label>
+        <select class="input" id="assignTech"></select>
+        <div style="height:12px"></div>
+        <div style="display:flex; gap:10px">
+          <button class="btn" id="btnCancelAssign">Cancelar</button>
+          <button class="btn primary" id="btnSaveAssign">Atribuir</button>
+        </div>
       </div>
     </section>
 
-    <!-- TECH (mantido igual) -->
+    <!-- TECH -->
     <section id="viewTech" class="hidden">
-      <!-- ... conteúdo existente do técnico ... -->
+      <div class="card">
+        <h1 class="h1">Técnico • Minhas OS</h1>
+        <div class="small">Toque para abrir os detalhes.</div>
+      </div>
+      <div style="height:12px"></div>
+      <div id="techList" class="list"></div>
+      
+      <div style="height:12px"></div>
+      
+      <!-- DETALHE -->
+      <div id="panelTechDetail" class="card hidden">
+        <h2 class="h2" id="techTitle">Detalhe</h2>
+        <div class="small" id="techSub"></div>
+        <div class="kv" style="margin-top:8px">
+          <span class="badge" id="techStatus">—</span>
+          <span class="badge" id="techPending">Checklist obrigatório pendente: 0</span>
+        </div>
+        
+        <div style="height:12px"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <a class="btn" id="btnMaps" target="_blank" rel="noreferrer">Abrir rota</a>
+          <button class="btn primary" id="btnStart">Iniciar</button>
+          <button class="btn primary" id="btnFinish">Finalizar</button>
+          <button class="btn" id="btnCloseDetail">Fechar</button>
+        </div>
+        
+        <hr />
+        <h2 class="h2">Checklist</h2>
+        <div id="techChecklist" class="list"></div>
+        
+        <hr />
+        <h2 class="h2">Fotos</h2>
+        <input class="input" id="photoInput" type="file" accept="image/*" capture="environment" />
+        <div class="small" style="margin-top:8px">No mobile, isso abre câmera/galeria.</div>
+        <div style="height:12px"></div>
+        <div class="row" style="gap:10px" id="techPhotos"></div>
+      </div>
     </section>
   </div>
 
@@ -530,10 +705,10 @@
     </div>
   </div>
 
-  <!-- MODAL ADICIONAR USUÁRIO -->
+  <!-- MODAL ADICIONAR/EDITAR USUÁRIO -->
   <div id="modalAddUser" class="modal-overlay hidden">
     <div class="modal">
-      <h2 class="h1">Adicionar Usuário</h2>
+      <h2 class="h1" id="modalUserTitle">Adicionar Usuário</h2>
       
       <div style="height:20px"></div>
       
@@ -547,8 +722,9 @@
       
       <div style="height:12px"></div>
       
-      <label class="small">Senha</label>
+      <label class="small" id="passwordLabel">Senha</label>
       <input class="input" id="newUserPassword" type="password" />
+      <div class="small" id="passwordHint">Deixe em branco para não alterar a senha.</div>
       
       <div style="height:12px"></div>
       
@@ -563,7 +739,98 @@
       
       <div style="display:flex; gap:10px; justify-content:flex-end">
         <button class="btn" id="btnCloseAddUser">Cancelar</button>
-        <button class="btn primary" id="btnSaveNewUser">Criar Usuário</button>
+        <button class="btn primary" id="btnSaveUser">Salvar Usuário</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVA OS PARA ADMIN -->
+  <div id="modalNewOSAdmin" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 800px;">
+      <h2 class="h1">Nova Ordem de Serviço (Admin)</h2>
+      
+      <div style="height:20px"></div>
+      
+      <div class="row">
+        <div class="col">
+          <label class="small">Título *</label>
+          <input class="input" id="newOSTitleAdmin" />
+          
+          <div style="height:10px"></div>
+          <label class="small">Descrição</label>
+          <textarea class="input" id="newOSDescAdmin" rows="4"></textarea>
+          
+          <div style="height:10px"></div>
+          <label class="small">Prioridade (1 alta • 5 baixa) *</label>
+          <input class="input" id="newOSPriorityAdmin" type="number" min="1" max="5" value="3" />
+          
+          <div style="height:10px"></div>
+          <label class="small">Status *</label>
+          <select class="input" id="newOSStatusAdmin">
+            <option value="NEW">NEW</option>
+            <option value="ASSIGNED">ASSIGNED</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+          </select>
+        </div>
+        
+        <div class="col">
+          <h3 class="h3">Endereço</h3>
+          
+          <label class="small">Endereço (linha 1) *</label>
+          <input class="input" id="newOSAddr1Admin" />
+          
+          <div style="height:10px"></div>
+          <label class="small">Complemento</label>
+          <input class="input" id="newOSAddr2Admin" />
+          
+          <div style="height:10px"></div>
+          
+          <div class="row">
+            <div class="col">
+              <label class="small">Cidade *</label>
+              <input class="input" id="newOSCityAdmin" />
+            </div>
+            <div class="col">
+              <label class="small">UF *</label>
+              <input class="input" id="newOSStateAdmin" maxlength="2" />
+            </div>
+            <div class="col">
+              <label class="small">CEP</label>
+              <input class="input" id="newOSZipAdmin" />
+            </div>
+          </div>
+          
+          <div style="height:10px"></div>
+          
+          <label class="small">Técnico Responsável</label>
+          <select class="input" id="newOSTechAdmin">
+            <option value="">Não atribuir</option>
+          </select>
+          
+          <div style="height:10px"></div>
+          
+          <label class="small">Analista Criador</label>
+          <select class="input" id="newOSAnalystAdmin">
+            <option value="">Eu mesmo (admin)</option>
+          </select>
+        </div>
+      </div>
+      
+      <hr />
+      
+      <h3 class="h3">Checklist</h3>
+      <div class="small">Itens obrigatórios bloqueiam finalização.</div>
+      <div style="height:10px"></div>
+      
+      <div id="newOSChkListAdmin" class="list"></div>
+      <div style="height:10px"></div>
+      <button class="btn" id="btnAddChkAdmin">+ Adicionar item</button>
+      
+      <div style="height:20px"></div>
+      
+      <div style="display:flex; gap:10px; justify-content:flex-end">
+        <button class="btn" id="btnCancelNewOSAdmin">Cancelar</button>
+        <button class="btn primary" id="btnSaveNewOSAdmin">Criar OS</button>
       </div>
     </div>
   </div>
@@ -600,20 +867,22 @@
     let adminOrders = [];
     let adminSelectedOrder = null;
     let adminUsers = [];
+    let adminTechs = [];
+    let adminAnalysts = [];
+    let editingUserId = null;
 
     // ---------- PERSONALIZAÇÃO ----------
     async function loadCustomization() {
       try {
-        // Tenta carregar do localStorage primeiro
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           customization = JSON.parse(saved);
         } else {
-          // Configuração padrão
           customization = {
             companyName: "OS Manager",
             logoUrl: "",
-            theme: "light"
+            headerBg: "#ffffff",
+            headerText: "#111111"
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(customization));
         }
@@ -624,7 +893,8 @@
         customization = {
           companyName: "OS Manager",
           logoUrl: "",
-          theme: "light"
+          headerBg: "#ffffff",
+          headerText: "#111111"
         };
       }
     }
@@ -659,11 +929,24 @@
         hide(logoPreview);
       }
       
+      // Aplica cores do cabeçalho
+      document.documentElement.style.setProperty('--header-bg', customization.headerBg);
+      document.documentElement.style.setProperty('--header-text', customization.headerText);
+      
+      if ($("headerPreview")) {
+        $("headerPreview").style.background = customization.headerBg;
+        $("headerPreview").style.color = customization.headerText;
+      }
+      
       // Preenche campos de edição
       if ($("customCompanyName")) {
         $("customCompanyName").value = customization.companyName;
         $("customLogoUrl").value = customization.logoUrl;
         $("namePreview").textContent = customization.companyName;
+        $("headerBgColor").value = customization.headerBg;
+        $("headerBgColorText").value = customization.headerBg;
+        $("headerTextColor").value = customization.headerText;
+        $("headerTextColorText").value = customization.headerText;
       }
     }
 
@@ -672,7 +955,8 @@
         const newCustomization = {
           companyName: $("customCompanyName").value.trim() || "OS Manager",
           logoUrl: $("customLogoUrl").value.trim(),
-          theme: customization?.theme || "light"
+          headerBg: $("headerBgColor").value,
+          headerText: $("headerTextColor").value
         };
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newCustomization));
@@ -688,13 +972,11 @@
 
     // ---------- ROUTING ----------
     function render() {
-      // Esconde todas as views
       hide(viewLogin);
       hide(viewAdmin);
       hide(viewAnalyst);
       hide(viewTech);
       
-      // Atualiza topbar
       setTopbar();
       
       if (!me || !profile) {
@@ -702,7 +984,6 @@
         return;
       }
       
-      // Decide qual view mostrar baseado no role
       switch(profile.role) {
         case "ADMIN":
           show(viewAdmin);
@@ -740,14 +1021,16 @@
         if (profile.role === "ADMIN") {
           topbarRole.classList.add("admin");
           btnAdminPanel.style.display = "inline-flex";
-        } else {
-          topbarRole.classList.remove("admin");
+        } else if (profile.role === "ANALYST") {
+          topbarRole.classList.add("analyst");
+          btnAdminPanel.style.display = "none";
+        } else if (profile.role === "TECH") {
+          topbarRole.classList.add("tech");
           btnAdminPanel.style.display = "none";
         }
         
         btnLogout.disabled = false;
         
-        // Avatar com iniciais
         if (profile.full_name) {
           const initials = profile.full_name
             .split(" ")
@@ -781,7 +1064,6 @@
         
         me = { id: data.user.id, email: data.user.email };
         
-        // Busca perfil
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("id, full_name, role")
@@ -793,11 +1075,9 @@
         
         profile = profileData;
         
-        // Limpa formulário
         $("loginEmail").value = "";
         $("loginPassword").value = "";
         
-        // Carrega personalização e renderiza
         await loadCustomization();
         render();
         
@@ -824,13 +1104,16 @@
     async function loadAdminData() {
       await Promise.all([
         loadAdminOrders(),
-        loadAdminUsers()
+        loadAdminUsers(),
+        loadAdminTechs(),
+        loadAdminAnalysts()
       ]);
     }
 
     async function loadAdminOrders() {
       try {
         const filter = $("adminFilter").value;
+        const techFilter = $("adminFilterTech").value;
         
         let query = supabase
           .from("service_orders")
@@ -845,6 +1128,10 @@
           query = query.eq("status", filter);
         }
         
+        if (techFilter !== "ALL") {
+          query = query.eq("assigned_to", techFilter);
+        }
+        
         const { data, error } = await query;
         if (error) throw error;
         
@@ -854,6 +1141,84 @@
       } catch (err) {
         console.error("Erro ao carregar ordens:", err);
         toast("Erro ao carregar ordens.");
+      }
+    }
+
+    async function loadAdminTechs() {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, role")
+          .in("role", ["TECH", "ADMIN"])
+          .order("full_name");
+          
+        if (error) throw error;
+        
+        adminTechs = data || [];
+        
+        const techSelect = $("adminFilterTech");
+        if (techSelect) {
+          techSelect.innerHTML = '<option value="ALL">Todos os técnicos</option>';
+          adminTechs.forEach(tech => {
+            const option = document.createElement("option");
+            option.value = tech.id;
+            option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
+            techSelect.appendChild(option);
+          });
+        }
+        
+        const newOSTechSelect = $("newOSTechAdmin");
+        if (newOSTechSelect) {
+          newOSTechSelect.innerHTML = '<option value="">Não atribuir</option>';
+          adminTechs.forEach(tech => {
+            const option = document.createElement("option");
+            option.value = tech.id;
+            option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
+            newOSTechSelect.appendChild(option);
+          });
+        }
+        
+        const editTechSelect = $("editAssignedTo");
+        if (editTechSelect) {
+          editTechSelect.innerHTML = '<option value="">Nenhum</option>';
+          adminTechs.forEach(tech => {
+            const option = document.createElement("option");
+            option.value = tech.id;
+            option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
+            editTechSelect.appendChild(option);
+          });
+        }
+        
+      } catch (err) {
+        console.error("Erro ao carregar técnicos:", err);
+      }
+    }
+
+    async function loadAdminAnalysts() {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, role")
+          .in("role", ["ANALYST", "ADMIN"])
+          .order("full_name");
+          
+        if (error) throw error;
+        
+        adminAnalysts = data || [];
+        
+        const analystSelect = $("newOSAnalystAdmin");
+        if (analystSelect) {
+          analystSelect.innerHTML = '<option value="">Eu mesmo (admin)</option>';
+          adminAnalysts.forEach(analyst => {
+            const option = document.createElement("option");
+            option.value = analyst.id;
+            option.textContent = `${analyst.full_name || analyst.email} (${analyst.role})`;
+            analystSelect.appendChild(option);
+          });
+        }
+        
+      } catch (err) {
+        console.error("Erro ao carregar analistas:", err);
       }
     }
 
@@ -979,55 +1344,231 @@
       
       container.innerHTML = "";
       
+      if (adminUsers.length === 0) {
+        container.innerHTML = `
+          <div class="card">
+            <div style="text-align:center; padding:20px; color:var(--muted)">
+              Nenhum usuário encontrado.
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
       adminUsers.forEach(user => {
         const card = document.createElement("div");
         card.className = "card";
         
+        const roleClass = user.role.toLowerCase();
+        const userInitials = (user.full_name || user.email)
+          .split(" ")
+          .map(n => n[0])
+          .join("")
+          .toUpperCase()
+          .substring(0, 2);
+        
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center">
-            <div>
-              <div style="font-weight:600">${escapeHtml(user.full_name || "Sem nome")}</div>
-              <div class="small">${escapeHtml(user.email)}</div>
-              <div style="margin-top:6px">
-                <span class="badge ${user.role.toLowerCase()}">${user.role}</span>
-                <span class="small">Desde ${new Date(user.created_at).toLocaleDateString()}</span>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="avatar" style="background: var(--primary); min-width: 40px; min-height: 40px;">
+                ${userInitials}
+              </div>
+              <div>
+                <div style="font-weight:600">${escapeHtml(user.full_name || "Sem nome")}</div>
+                <div class="small">${escapeHtml(user.email)}</div>
+                <div style="margin-top:6px">
+                  <span class="badge ${roleClass}">${user.role}</span>
+                  <span class="small">Desde ${new Date(user.created_at).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
-            <div>
-              <button class="btn small" data-user-id="${user.id}" onclick="editUser('${user.id}')">Editar</button>
+            <div class="admin-buttons">
+              <button class="btn small edit-user-btn" data-user-id="${user.id}">Editar</button>
+              ${user.id !== me?.id ? 
+                `<button class="btn small danger delete-user-btn" data-user-id="${user.id}">Remover</button>` : 
+                ''
+              }
             </div>
           </div>
         `;
+        
+        card.querySelector(".edit-user-btn").addEventListener("click", () => openEditUserModal(user));
+        if (user.id !== me?.id) {
+          card.querySelector(".delete-user-btn").addEventListener("click", () => deleteUser(user.id, user.email));
+        }
         
         container.appendChild(card);
       });
     }
 
+    async function openEditUserModal(user = null) {
+      editingUserId = user ? user.id : null;
+      
+      const modalTitle = $("modalUserTitle");
+      const passwordLabel = $("passwordLabel");
+      const passwordHint = $("passwordHint");
+      
+      if (user) {
+        modalTitle.textContent = "Editar Usuário";
+        passwordLabel.textContent = "Nova Senha";
+        passwordHint.textContent = "Deixe em branco para não alterar a senha.";
+        
+        $("newUserName").value = user.full_name || "";
+        $("newUserEmail").value = user.email || "";
+        $("newUserPassword").value = "";
+        $("newUserRole").value = user.role || "TECH";
+        
+        // Desabilita email se estiver editando
+        $("newUserEmail").disabled = true;
+      } else {
+        modalTitle.textContent = "Adicionar Usuário";
+        passwordLabel.textContent = "Senha";
+        passwordHint.textContent = "Informe uma senha para o novo usuário.";
+        
+        $("newUserName").value = "";
+        $("newUserEmail").value = "";
+        $("newUserPassword").value = "";
+        $("newUserRole").value = "TECH";
+        
+        // Habilita email para novo usuário
+        $("newUserEmail").disabled = false;
+      }
+      
+      show($("modalAddUser"));
+    }
+
+    async function saveUser() {
+      const name = $("newUserName").value.trim();
+      const email = $("newUserEmail").value.trim();
+      const password = $("newUserPassword").value;
+      const role = $("newUserRole").value;
+      
+      if (!name) {
+        toast("Informe o nome do usuário.");
+        return;
+      }
+      
+      if (!editingUserId && !email) {
+        toast("Informe o email do usuário.");
+        return;
+      }
+      
+      if (!editingUserId && !password) {
+        toast("Informe uma senha para o novo usuário.");
+        return;
+      }
+      
+      try {
+        if (editingUserId) {
+          // Editar usuário existente
+          const updates = {
+            full_name: name,
+            role: role
+          };
+          
+          const { error } = await supabase
+            .from("profiles")
+            .update(updates)
+            .eq("id", editingUserId);
+            
+          if (error) throw error;
+          
+          // Se houver senha, atualiza via Auth
+          if (password) {
+            const { error: authError } = await supabase.auth.updateUser({
+              password: password
+            });
+            
+            if (authError) {
+              console.warn("Não foi possível atualizar a senha:", authError);
+            }
+          }
+          
+          toast("Usuário atualizado com sucesso!");
+        } else {
+          // Criar novo usuário
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { 
+                full_name: name,
+                role: role
+              }
+            }
+          });
+          
+          if (authError) throw authError;
+          
+          toast("Usuário criado com sucesso! Verifique o email.");
+        }
+        
+        hide($("modalAddUser"));
+        editingUserId = null;
+        
+        // Limpa formulário
+        $("newUserName").value = "";
+        $("newUserEmail").value = "";
+        $("newUserPassword").value = "";
+        $("newUserRole").value = "TECH";
+        
+        // Recarrega lista
+        await loadAdminUsers();
+        
+      } catch (err) {
+        console.error("Erro ao salvar usuário:", err);
+        toast("Erro ao salvar usuário: " + err.message);
+      }
+    }
+
+    async function deleteUser(userId, userEmail) {
+      if (!confirm(`Tem certeza que deseja remover o usuário ${userEmail}?\n\nEsta ação não pode ser desfeita.`)) {
+        return;
+      }
+      
+      try {
+        // Primeiro remove o profile
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .delete()
+          .eq("id", userId);
+          
+        if (profileError) throw profileError;
+        
+        // Nota: Remover do Auth requer admin API key
+        // Aqui apenas removemos o profile, o usuário ainda existe no Auth
+        
+        toast("Usuário removido com sucesso!");
+        await loadAdminUsers();
+        
+      } catch (err) {
+        console.error("Erro ao remover usuário:", err);
+        toast("Erro ao remover usuário: " + err.message);
+      }
+    }
+
     async function openEditModal(order) {
       adminSelectedOrder = order;
       
-      // Preenche modal
       $("editOSId").textContent = `ID: ${order.id}`;
       $("editTitle").value = order.title;
       $("editDesc").value = order.description || "";
       $("editPriority").value = order.priority;
       $("editStatus").value = order.status;
       
-      // Carrega lista de técnicos
-      const { data: techs, error } = await supabase.rpc("list_techs");
-      if (!error) {
-        const select = $("editAssignedTo");
+      // Preenche select de técnico
+      const select = $("editAssignedTo");
+      if (adminTechs.length > 0) {
         select.innerHTML = '<option value="">Nenhum</option>';
-        techs.forEach(tech => {
+        adminTechs.forEach(tech => {
           const option = document.createElement("option");
           option.value = tech.id;
-          option.textContent = tech.full_name || tech.id;
+          option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
           option.selected = tech.id === order.assigned_to;
           select.appendChild(option);
         });
       }
       
-      // Mostra botão de reabrir se estiver finalizada/cancelada
       if (order.status === "DONE" || order.status === "CANCELED") {
         show($("btnReopenOS"));
       } else {
@@ -1094,14 +1635,145 @@
       }
     }
 
+    // ---------- NOVA OS PARA ADMIN ----------
+    async function openNewOSModalAdmin() {
+      // Limpa campos
+      $("newOSTitleAdmin").value = "";
+      $("newOSDescAdmin").value = "";
+      $("newOSPriorityAdmin").value = "3";
+      $("newOSStatusAdmin").value = "NEW";
+      $("newOSAddr1Admin").value = "";
+      $("newOSAddr2Admin").value = "";
+      $("newOSCityAdmin").value = "";
+      $("newOSStateAdmin").value = "";
+      $("newOSZipAdmin").value = "";
+      $("newOSTechAdmin").value = "";
+      $("newOSAnalystAdmin").value = "";
+      
+      // Limpa checklist
+      $("newOSChkListAdmin").innerHTML = "";
+      addChecklistRowAdmin("Checar condição do local", true);
+      addChecklistRowAdmin("Executar procedimento principal", true);
+      addChecklistRowAdmin("Registrar evidências (fotos)", true);
+      
+      show($("modalNewOSAdmin"));
+    }
+
+    function addChecklistRowAdmin(label = "", required = true) {
+      const wrap = document.createElement("div");
+      wrap.className = "card";
+      wrap.style.padding = "10px";
+
+      wrap.innerHTML = `
+        <label class="small">Item</label>
+        <input class="input" data-role="label" value="${escapeHtml(label)}" />
+        <div style="height:8px"></div>
+        <label class="small" style="display:flex; gap:8px; align-items:center">
+          <input type="checkbox" data-role="required" ${required ? "checked" : ""} />
+          Obrigatório
+        </label>
+        <div style="height:8px"></div>
+        <button class="btn danger" data-role="remove">Remover</button>
+      `;
+
+      wrap.querySelector('[data-role="remove"]').addEventListener("click", () => wrap.remove());
+      $("newOSChkListAdmin").appendChild(wrap);
+    }
+
+    function readChecklistUIAdmin() {
+      const rows = Array.from($("newOSChkListAdmin").children);
+      return rows.map((row, i) => ({
+        label: row.querySelector('[data-role="label"]').value.trim(),
+        required: row.querySelector('[data-role="required"]').checked,
+        sort: i
+      })).filter(x => x.label.length > 0);
+    }
+
+    async function saveNewOSAdmin() {
+      const title = $("newOSTitleAdmin").value.trim();
+      const description = $("newOSDescAdmin").value.trim();
+      const priority = Number($("newOSPriorityAdmin").value || 3);
+      const status = $("newOSStatusAdmin").value;
+      
+      const address_line1 = $("newOSAddr1Admin").value.trim();
+      const address_line2 = $("newOSAddr2Admin").value.trim();
+      const city = $("newOSCityAdmin").value.trim();
+      const state = $("newOSStateAdmin").value.trim();
+      const zip = $("newOSZipAdmin").value.trim();
+      
+      const assigned_to = $("newOSTechAdmin").value || null;
+      const created_by = $("newOSAnalystAdmin").value || me.id;
+      
+      if (!title) {
+        toast("Informe o título.");
+        return;
+      }
+      
+      if (!address_line1 || !city || !state) {
+        toast("Informe endereço/cidade/UF.");
+        return;
+      }
+      
+      const checklist = readChecklistUIAdmin();
+      if (!checklist.length) {
+        toast("Inclua pelo menos 1 item no checklist.");
+        return;
+      }
+      
+      try {
+        $("btnSaveNewOSAdmin").disabled = true;
+        
+        const { data: so, error: e1 } = await supabase
+          .from("service_orders")
+          .insert([{
+            title,
+            description: description ? description : null,
+            priority,
+            address_line1,
+            address_line2: address_line2 ? address_line2 : null,
+            city,
+            state,
+            zip: zip ? zip : null,
+            created_by: created_by,
+            assigned_to: assigned_to,
+            status: status
+          }])
+          .select("id")
+          .single();
+          
+        if (e1) throw e1;
+        
+        const items = checklist.map(c => ({
+          service_order_id: so.id,
+          label: c.label,
+          required: c.required,
+          sort: c.sort
+        }));
+        
+        const { error: e2 } = await supabase
+          .from("service_order_checklist_items")
+          .insert(items);
+          
+        if (e2) throw e2;
+        
+        toast("OS criada com sucesso!");
+        hide($("modalNewOSAdmin"));
+        await loadAdminOrders();
+        
+      } catch (err) {
+        console.error("Erro ao criar OS:", err);
+        toast(err.message ?? "Erro ao criar OS.");
+      } finally {
+        $("btnSaveNewOSAdmin").disabled = false;
+      }
+    }
+
     // ---------- TAB SWITCHING ----------
     document.querySelectorAll(".tab").forEach(tab => {
       tab.addEventListener("click", () => {
-        // Atualiza tabs
         document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         
-        // Mostra conteúdo correspondente
         const tabName = tab.dataset.tab;
         document.querySelectorAll(".tab-content").forEach(content => {
           hide(content);
@@ -1114,6 +1786,7 @@
     // ---------- EVENT LISTENERS ----------
     $("btnAdminRefresh").addEventListener("click", loadAdminOrders);
     $("adminFilter").addEventListener("change", loadAdminOrders);
+    $("adminFilterTech").addEventListener("change", loadAdminOrders);
     
     $("btnAdminPanel").addEventListener("click", () => {
       if (profile?.role === "ADMIN") {
@@ -1121,6 +1794,8 @@
         loadAdminData();
       }
     });
+    
+    $("btnNewOSAdmin").addEventListener("click", openNewOSModalAdmin);
     
     $("btnCloseEdit").addEventListener("click", () => hide($("modalEditOS")));
     $("btnSaveEdit").addEventListener("click", saveOrderEdit);
@@ -1140,94 +1815,98 @@
       }
     });
     
-    $("btnAddUser").addEventListener("click", () => {
-      show($("modalAddUser"));
+    $("btnAddUser").addEventListener("click", () => openEditUserModal());
+    $("btnCloseAddUser").addEventListener("click", () => {
+      hide($("modalAddUser"));
+      editingUserId = null;
+    });
+    $("btnSaveUser").addEventListener("click", saveUser);
+    
+    $("btnCancelNewOSAdmin").addEventListener("click", () => hide($("modalNewOSAdmin")));
+    $("btnSaveNewOSAdmin").addEventListener("click", saveNewOSAdmin);
+    $("btnAddChkAdmin").addEventListener("click", () => addChecklistRowAdmin("", true));
+    
+    // Sincroniza campos de cor
+    $("headerBgColor").addEventListener("input", function() {
+      $("headerBgColorText").value = this.value;
+      $("headerPreview").style.background = this.value;
     });
     
-    $("btnCloseAddUser").addEventListener("click", () => hide($("modalAddUser")));
+    $("headerBgColorText").addEventListener("input", function() {
+      $("headerBgColor").value = this.value;
+      $("headerPreview").style.background = this.value;
+    });
     
-    $("btnSaveNewUser").addEventListener("click", async () => {
-      const name = $("newUserName").value.trim();
-      const email = $("newUserEmail").value.trim();
-      const password = $("newUserPassword").value;
-      const role = $("newUserRole").value;
-      
-      if (!name || !email || !password) {
-        toast("Preencha todos os campos.");
-        return;
-      }
-      
-      try {
-        // 1. Criar usuário no Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: name }
-          }
-        });
-        
-        if (authError) throw authError;
-        
-        // 2. Atualizar perfil com role (pode precisar de trigger ou fazer manualmente)
-        // Aqui assumimos que há uma trigger que cria o profile automaticamente
-        // Pode ser necessário ajustar conforme sua configuração
-        
-        toast("Usuário criado com sucesso!");
-        hide($("modalAddUser"));
-        
-        // Limpa formulário
-        $("newUserName").value = "";
-        $("newUserEmail").value = "";
-        $("newUserPassword").value = "";
-        
-        // Recarrega lista
-        await loadAdminUsers();
-        
-      } catch (err) {
-        console.error("Erro ao criar usuário:", err);
-        toast("Erro ao criar usuário: " + err.message);
-      }
+    $("headerTextColor").addEventListener("input", function() {
+      $("headerTextColorText").value = this.value;
+      $("headerPreview").style.color = this.value;
     });
-
-    // Preview da logo quando URL muda
-    $("customLogoUrl")?.addEventListener("input", function() {
-      const url = this.value.trim();
-      const preview = $("logoPreview");
-      
-      if (url && (url.startsWith("http://") || url.startsWith("https://"))) {
-        preview.src = url;
-        show(preview);
-      } else {
-        hide(preview);
-      }
+    
+    $("headerTextColorText").addEventListener("input", function() {
+      $("headerTextColor").value = this.value;
+      $("headerPreview").style.color = this.value;
     });
-
+    
     // Upload de logo
-    $("logoUpload")?.addEventListener("change", async function(e) {
+    $("logoUpload")?.addEventListener("change", function(e) {
       const file = e.target.files[0];
       if (!file || !file.type.startsWith("image/")) return;
       
-      try {
-        // Aqui você pode implementar upload para o storage do Supabase
-        // Por enquanto, usamos URL local
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          $("customLogoUrl").value = e.target.result;
-          $("logoPreview").src = e.target.result;
-          show($("logoPreview"));
-        };
-        reader.readAsDataURL(file);
-        
-      } catch (err) {
-        console.error("Erro ao processar imagem:", err);
-        toast("Erro ao processar imagem.");
-      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        $("customLogoUrl").value = e.target.result;
+        $("logoPreview").src = e.target.result;
+        show($("logoPreview"));
+      };
+      reader.readAsDataURL(file);
     });
+
+    // ---------- ANALYST FUNCTIONS (mantidas do código original) ----------
+    window.loadAnalystOrders = async function() {
+      try {
+        const status = $("analystStatus").value;
+        
+        let q = supabase.from("service_orders").select("*").order("created_at", { ascending: false });
+        if (status !== "ALL") q = q.eq("status", status);
+        
+        const { data, error } = await q;
+        if (error) {
+          toast(error.message);
+          return;
+        }
+        
+        analystOrders = data || [];
+        renderAnalystCounts(analystOrders);
+        renderAnalystList(analystOrders);
+      } catch (err) {
+        console.error("Erro ao carregar ordens:", err);
+        toast("Erro ao carregar ordens.");
+      }
+    };
+
+    // ---------- TECH FUNCTIONS (mantidas do código original) ----------
+    window.loadTechOrders = async function() {
+      try {
+        const { data, error } = await supabase
+          .from("service_orders")
+          .select("*")
+          .order("updated_at", { ascending: false });
+          
+        if (error) {
+          toast(error.message);
+          return;
+        }
+        
+        techOrders = data || [];
+        renderTechList(techOrders);
+      } catch (err) {
+        console.error("Erro ao carregar ordens:", err);
+        toast("Erro ao carregar ordens.");
+      }
+    };
 
     // ---------- UTILS ----------
     function toast(message) {
-      // Cria um toast simples
       const toast = document.createElement("div");
       toast.textContent = message;
       toast.style.cssText = `
@@ -1266,7 +1945,6 @@
     // ---------- BOOTSTRAP ----------
     async function bootstrap() {
       try {
-        // Verifica sessão
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
@@ -1279,7 +1957,6 @@
         
         me = { id: session.user.id, email: session.user.email };
         
-        // Busca perfil
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("id, full_name, role")
@@ -1319,38 +1996,6 @@
 
     // Inicializa
     bootstrap();
-
-    // Função global para editar usuário (simplificada)
-    window.editUser = async function(userId) {
-      const user = adminUsers.find(u => u.id === userId);
-      if (!user) return;
-      
-      const newRole = prompt("Novo papel para " + user.email + ":\n(TECH, ANALYST, ADMIN)", user.role);
-      
-      if (newRole && ["TECH", "ANALYST", "ADMIN"].includes(newRole.toUpperCase())) {
-        try {
-          const { error } = await supabase
-            .from("profiles")
-            .update({ role: newRole.toUpperCase() })
-            .eq("id", userId);
-            
-          if (error) throw error;
-          
-          toast("Papel atualizado com sucesso!");
-          await loadAdminUsers();
-          
-        } catch (err) {
-          console.error("Erro ao atualizar papel:", err);
-          toast("Erro ao atualizar papel.");
-        }
-      }
-    };
-
-    // Mantém funções existentes do analista/técnico
-    window.loadAnalystOrders = async function() { /* implementação existente */ };
-    window.loadTechOrders = async function() { /* implementação existente */ };
-    // ... outras funções do código original ...
-
   </script>
 </body>
 </html>
