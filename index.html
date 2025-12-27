@@ -1498,10 +1498,18 @@
 
     async function loadAdminUsers() {
       try {
-        const { data, error } = await supabase.rpc('list_all_users');
-        
-        if (error) {
-          console.warn("Erro na RPC, tentando query direta:", error);
+        // Primeiro tenta usar a RPC
+        try {
+          const { data, error } = await supabase.rpc('list_all_users');
+          
+          if (!error && data) {
+            adminUsers = data;
+          } else {
+            throw new Error('RPC falhou, usando query direta');
+          }
+        } catch (rpcError) {
+          console.log("RPC falhou, usando query direta:", rpcError);
+          
           const { data: directData, error: directError } = await supabase
             .from('profiles')
             .select('id, email, full_name, role, created_at')
@@ -1509,8 +1517,6 @@
             
           if (directError) throw directError;
           adminUsers = directData || [];
-        } else {
-          adminUsers = data || [];
         }
         
         renderAdminUsers();
@@ -1649,38 +1655,104 @@
           
           toast("Usuário atualizado com sucesso!", 'success');
         } else {
-          // Criar novo usuário
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: name, role: role } }
-          });
+          // Criar novo usuário - usando admin API se disponível
+          console.log("Criando novo usuário:", email);
           
-          if (authError) {
-            if (authError.message.includes('already registered')) {
-              toast("Email já registrado. Atualizando perfil...", 'warning');
-              
-              // Encontra e atualiza usuário existente
-              const { data: users } = await supabase.auth.admin.listUsers();
-              const user = users?.users?.find(u => u.email === email);
-              
-              if (user) {
-                await supabase
+          try {
+            // Primeiro tenta criar com signUp
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+              email,
+              password,
+              options: { 
+                data: { full_name: name, role: role },
+                emailRedirectTo: window.location.origin
+              }
+            });
+            
+            if (authError) {
+              if (authError.message.includes('already registered')) {
+                console.log("Usuário já existe, atualizando perfil");
+                
+                // Busca o usuário existente
+                const { data: existingUser, error: fetchError } = await supabase
                   .from('profiles')
-                  .upsert({
-                    id: user.id,
-                    email: email,
-                    full_name: name,
-                    role: role
-                  }, { onConflict: 'id' });
+                  .select('id')
+                  .eq('email', email)
+                  .maybeSingle();
                   
-                toast(`Perfil de ${name} atualizado!`, 'success');
+                if (existingUser) {
+                  // Atualiza o perfil existente
+                  const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ full_name: name, role: role })
+                    .eq('id', existingUser.id);
+                    
+                  if (updateError) throw updateError;
+                  
+                  toast(`Usuário ${name} atualizado com sucesso!`, 'success');
+                } else {
+                  throw new Error('Usuário já existe mas não foi encontrado no perfil');
+                }
+              } else {
+                throw authError;
               }
             } else {
-              throw authError;
+              console.log("Usuário criado via signUp:", authData.user?.id);
+              
+              // Aguarda um pouco para garantir que o perfil foi criado
+              setTimeout(async () => {
+                try {
+                  // Atualiza o perfil com nome e role
+                  const { error: profileError } = await supabase
+                    .from('profiles')
+                    .update({ 
+                      full_name: name, 
+                      role: role,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', authData.user?.id);
+                    
+                  if (profileError) {
+                    console.warn("Erro ao atualizar perfil após criação:", profileError);
+                  }
+                } catch (err) {
+                  console.warn("Erro ao atualizar perfil:", err);
+                }
+              }, 1000);
+              
+              toast(`Usuário ${name} criado com sucesso! O usuário pode fazer login imediatamente.`, 'success');
             }
-          } else {
-            toast(`Usuário ${name} criado com sucesso!`, 'success');
+          } catch (signUpError) {
+            console.error("Erro no signUp:", signUpError);
+            
+            // Fallback: tenta criar apenas o perfil
+            try {
+              // Primeiro precisamos obter o ID do usuário
+              const { data: authUsers } = await supabase.auth.admin.listUsers();
+              const existingAuthUser = authUsers?.users?.find(u => u.email === email);
+              
+              if (existingAuthUser) {
+                // Usuário existe no auth mas não no perfil
+                const { error: insertError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: existingAuthUser.id,
+                    email: email,
+                    full_name: name,
+                    role: role,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  });
+                  
+                if (insertError) throw insertError;
+                toast(`Perfil criado para usuário existente ${name}!`, 'success');
+              } else {
+                throw new Error('Não foi possível criar o usuário. Tente criar manualmente no painel do Supabase.');
+              }
+            } catch (fallbackError) {
+              console.error("Erro no fallback:", fallbackError);
+              throw new Error(`Não foi possível criar o usuário: ${fallbackError.message}. Verifique se o email já está registrado.`);
+            }
           }
         }
         
@@ -1959,6 +2031,8 @@
     });
 
     // ---------- ANALYST FUNCTIONS ----------
+    let analystOrders = [];
+    
     async function loadAnalystOrders() {
       try {
         const status = $("analystStatus").value;
@@ -2029,6 +2103,8 @@
     }
 
     // ---------- TECH FUNCTIONS ----------
+    let techOrders = [];
+    
     async function loadTechOrders() {
       try {
         const { data, error } = await supabase
