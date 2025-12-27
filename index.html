@@ -5,11 +5,872 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title id="pageTitle">OS Manager</title>
   <style>
-    /* ... (mantenha todos os estilos existentes) ... */
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --border: #e7e7ea;
+      --text: #111;
+      --muted: #666;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #b42318;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --header-bg: #fff;
+      --header-text: #111;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s;
+    }
+    
+    a { color: inherit; text-decoration: none; }
+    
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--header-bg);
+      color: var(--header-text);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+    
+    .topbar-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .brand-logo {
+      height: 32px;
+      width: auto;
+      max-width: 120px;
+      object-fit: contain;
+    }
+    
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--header-text);
+    }
+    
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    }
+    
+    .row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .col { flex: 1 1 320px; }
+    
+    .h1 { font-size: 20px; font-weight: 700; margin: 0 0 12px; }
+    .h2 { font-size: 17px; font-weight: 600; margin: 0 0 10px; }
+    .h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+    
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    
+    .list { display: flex; flex-direction: column; gap: 10px; }
+    
+    .kv {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: #444;
+      font-size: 13px;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fafafa;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    
+    .badge.new { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .badge.assigned { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .badge.in_progress { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .badge.done { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .badge.canceled { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .badge.priority { background: #f3f4f6; color: #4b5563; }
+    .badge.admin { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+    .badge.analyst { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .badge.tech { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    
+    .input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #d7d7dc;
+      background: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border 0.2s;
+    }
+    
+    .input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    .btn {
+      border: 1px solid #d7d7dc;
+      background: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    
+    .btn:hover:not(:disabled) {
+      background: #f9fafb;
+      border-color: #c2c2c9;
+    }
+    
+    .btn.primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    
+    .btn.primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    
+    .btn.danger {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+    }
+    
+    .btn.danger:hover:not(:disabled) {
+      background: #912018;
+      border-color: #912018;
+    }
+    
+    .btn.warning {
+      background: var(--warning);
+      color: #fff;
+      border-color: var(--warning);
+    }
+    
+    .btn.success {
+      background: var(--success);
+      color: #fff;
+      border-color: var(--success);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    hr {
+      border: 0;
+      border-top: 1px solid var(--border);
+      margin: 16px 0;
+    }
+    
+    .thumb {
+      width: 92px;
+      height: 92px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    
+    .thumb:hover {
+      transform: scale(1.05);
+    }
+    
+    .hidden { display: none !important; }
+    
+    .click { cursor: pointer; }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    
+    .tab {
+      padding: 10px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+    
+    .admin-only { border-left: 3px solid var(--primary); }
+    
+    .user-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-email {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+    
+    .color-picker {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    .color-preview {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border: 1px solid var(--border);
+    }
+    
+    .admin-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .debug-info {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 10px;
+      z-index: 9999;
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <!-- ... (mantenha toda a estrutura HTML existente) ... -->
+  <!-- DEBUG INFO (opcional) -->
+  <div class="debug-info" id="debugInfo"></div>
+  
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img id="companyLogo" class="brand-logo hidden" alt="Logo" />
+        <div id="companyName" class="brand-name">OS Manager</div>
+      </div>
+      
+      <div style="display:flex; gap:12px; align-items:center">
+        <span id="userAvatar" class="avatar hidden"></span>
+        <span class="badge" id="topbarRole">—</span>
+        <button class="btn" id="btnAdminPanel" style="display:none">Painel Admin</button>
+        <button class="btn" id="btnLogout" disabled>Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- LOGIN -->
+    <section id="viewLogin" class="card" style="max-width:420px; margin:40px auto">
+      <h1 class="h1" id="loginTitle">Entrar no Sistema</h1>
+      <form id="formLogin">
+        <label class="small">Email</label>
+        <input class="input" id="loginEmail" autocomplete="email" placeholder="seu@email.com" />
+        
+        <div style="height:12px"></div>
+        <label class="small">Senha</label>
+        <input class="input" id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+        
+        <div style="height:16px"></div>
+        <button class="btn primary" type="submit" style="width:100%" id="btnLogin">
+          <span>Entrar</span>
+        </button>
+        
+        <div class="small" style="margin-top:12px; text-align:center">
+          Sistema de Gerenciamento de Ordens de Serviço
+        </div>
+      </form>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="viewAdmin" class="hidden">
+      <div class="card">
+        <div class="row" style="align-items:center; justify-content:space-between">
+          <div class="col">
+            <h1 class="h1">Painel Administrativo</h1>
+            <div class="small" id="adminStats"></div>
+          </div>
+          <div class="col" style="display:flex; gap:10px; justify-content:flex-end">
+            <button class="btn primary" id="btnNewOSAdmin">+ Nova OS</button>
+            <button class="btn" id="btnAdminRefresh">Atualizar</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <!-- ABAS ADMIN -->
+      <div class="tabs">
+        <button class="tab active" data-tab="orders">Ordens de Serviço</button>
+        <button class="tab" data-tab="customize">Personalização</button>
+        <button class="tab" data-tab="users">Usuários</button>
+      </div>
+
+      <!-- ORDENS -->
+      <div id="tabOrders" class="tab-content">
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="row">
+            <div class="col">
+              <label class="small">Filtrar por status:</label>
+              <select class="input" id="adminFilter">
+                <option value="ALL">Todas as OS</option>
+                <option value="NEW">NEW</option>
+                <option value="ASSIGNED">ASSIGNED</option>
+                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                <option value="DONE">DONE</option>
+                <option value="CANCELED">CANCELED</option>
+              </select>
+            </div>
+            <div class="col">
+              <label class="small">Filtrar por técnico:</label>
+              <select class="input" id="adminFilterTech">
+                <option value="ALL">Todos os técnicos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div id="adminList" class="list"></div>
+      </div>
+
+      <!-- PERSONALIZAÇÃO -->
+      <div id="tabCustomize" class="tab-content hidden">
+        <div class="card">
+          <h2 class="h2">Personalização do Sistema</h2>
+          <div class="small">Configure a aparência do sistema.</div>
+          
+          <div style="height:20px"></div>
+          
+          <label class="small">Nome da Empresa</label>
+          <input class="input" id="customCompanyName" placeholder="Nome da sua empresa" />
+          
+          <div style="height:12px"></div>
+          
+          <label class="small">Logo da Empresa (URL ou upload)</label>
+          <input class="input" id="customLogoUrl" placeholder="https://exemplo.com/logo.png" />
+          
+          <div style="height:8px"></div>
+          <div class="small">Ou faça upload:</div>
+          <input type="file" id="logoUpload" accept="image/*" class="input" />
+          
+          <div style="height:20px"></div>
+          
+          <h3 class="h3">Cores do Cabeçalho</h3>
+          
+          <div class="row">
+            <div class="col">
+              <label class="small">Cor de Fundo</label>
+              <input type="color" id="headerBgColor" class="color-picker" value="#ffffff" />
+              <input type="text" id="headerBgColorText" class="input" value="#ffffff" style="margin-top: 8px;" placeholder="#ffffff" />
+            </div>
+            <div class="col">
+              <label class="small">Cor do Texto</label>
+              <input type="color" id="headerTextColor" class="color-picker" value="#111111" />
+              <input type="text" id="headerTextColorText" class="input" value="#111111" style="margin-top: 8px;" placeholder="#111111" />
+            </div>
+          </div>
+          
+          <div class="color-preview" id="headerPreview" style="background: var(--header-bg); color: var(--header-text); padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div id="namePreview" style="font-weight: 800; font-size: 18px;">Nome da Empresa</div>
+              <div style="font-size: 12px;">Exemplo de texto no cabeçalho</div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge">Admin</span>
+              <button class="btn" style="font-size: 12px; padding: 6px 12px;">Botão</button>
+            </div>
+          </div>
+          
+          <div style="height:20px"></div>
+          
+          <button class="btn primary" id="btnSaveCustomization">Salvar Personalização</button>
+          <button class="btn" id="btnResetCustomization">Redefinir Padrão</button>
+        </div>
+      </div>
+
+      <!-- USUÁRIOS -->
+      <div id="tabUsers" class="tab-content hidden">
+        <div class="card">
+          <div class="row" style="align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+              <h2 class="h2">Gerenciar Usuários</h2>
+              <div class="small" style="background: #f0f9ff; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #bae6fd;">
+                <strong>⚠️ Nota:</strong> O usuário será criado sem necessidade de confirmação por email. A senha será a informada abaixo.
+              </div>
+            </div>
+            <button class="btn primary" id="btnAddUser">+ Adicionar Usuário</button>
+          </div>
+          
+          <div id="usersList" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYST -->
+    <section id="viewAnalyst" class="hidden">
+      <div class="row" style="align-items:center; justify-content:space-between">
+        <div class="col">
+          <div class="kv" id="analystCounts"></div>
+        </div>
+        <div class="col" style="display:flex; gap:10px; justify-content:flex-end">
+          <select class="input" id="analystStatus" style="max-width:220px">
+            <option value="ALL">Todos</option>
+            <option value="NEW">NEW</option>
+            <option value="ASSIGNED">ASSIGNED</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+            <option value="DONE">DONE</option>
+            <option value="CANCELED">CANCELED</option>
+          </select>
+          <button class="btn primary" id="btnNewOS">+ Nova OS</button>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+      <div id="analystList" class="list"></div>
+      <div style="height:12px"></div>
+
+      <!-- Painéis do analista -->
+      <div id="panelNewOS" class="card hidden">
+        <h2 class="h2">Nova OS (Analista)</h2>
+        <div class="row">
+          <div class="col">
+            <label class="small">Título</label>
+            <input class="input" id="newTitle" />
+            
+            <div style="height:10px"></div>
+            <label class="small">Descrição</label>
+            <textarea class="input" id="newDesc" rows="4"></textarea>
+            
+            <div style="height:10px"></div>
+            <label class="small">Prioridade (1 alta • 5 baixa)</label>
+            <input class="input" id="newPriority" type="number" min="1" max="5" value="3" />
+            
+            <hr />
+            <h2 class="h2">Endereço</h2>
+            
+            <label class="small">Endereço (linha 1)</label>
+            <input class="input" id="newAddr1" />
+            <div style="height:10px"></div>
+            
+            <label class="small">Complemento</label>
+            <input class="input" id="newAddr2" />
+            <div style="height:10px"></div>
+            
+            <div class="row">
+              <div class="col">
+                <label class="small">Cidade</label>
+                <input class="input" id="newCity" />
+              </div>
+              <div class="col">
+                <label class="small">UF</label>
+                <input class="input" id="newState" />
+              </div>
+              <div class="col">
+                <label class="small">CEP</label>
+                <input class="input" id="newZip" />
+              </div>
+            </div>
+            
+            <div style="height:12px"></div>
+            <div style="display:flex; gap:10px">
+              <button class="btn" id="btnCancelNewOS">Cancelar</button>
+              <button class="btn primary" id="btnSaveNewOS">Salvar</button>
+            </div>
+          </div>
+          
+          <div class="col">
+            <h2 class="h2">Checklist</h2>
+            <div class="small">Itens obrigatórios bloqueiam finalização.</div>
+            <div style="height:10px"></div>
+            
+            <div id="chkList" class="list"></div>
+            <div style="height:10px"></div>
+            <button class="btn" id="btnAddChk">+ Adicionar item</button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="panelAssign" class="card hidden">
+        <h2 class="h2">Atribuir OS</h2>
+        <div class="small" id="assignSubtitle"></div>
+        <div style="height:12px"></div>
+        <label class="small">Técnico</label>
+        <select class="input" id="assignTech"></select>
+        <div style="height:12px"></div>
+        <div style="display:flex; gap:10px">
+          <button class="btn" id="btnCancelAssign">Cancelar</button>
+          <button class="btn primary" id="btnSaveAssign">Atribuir</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TECH -->
+    <section id="viewTech" class="hidden">
+      <div class="card">
+        <h1 class="h1">Técnico • Minhas OS</h1>
+        <div class="small">Toque para abrir os detalhes.</div>
+      </div>
+      <div style="height:12px"></div>
+      <div id="techList" class="list"></div>
+      
+      <div style="height:12px"></div>
+      
+      <!-- DETALHE -->
+      <div id="panelTechDetail" class="card hidden">
+        <h2 class="h2" id="techTitle">Detalhe</h2>
+        <div class="small" id="techSub"></div>
+        <div class="kv" style="margin-top:8px">
+          <span class="badge" id="techStatus">—</span>
+          <span class="badge" id="techPending">Checklist obrigatório pendente: 0</span>
+        </div>
+        
+        <div style="height:12px"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <a class="btn" id="btnMaps" target="_blank" rel="noreferrer">Abrir rota</a>
+          <button class="btn primary" id="btnStart">Iniciar</button>
+          <button class="btn primary" id="btnFinish">Finalizar</button>
+          <button class="btn" id="btnCloseDetail">Fechar</button>
+        </div>
+        
+        <hr />
+        <h2 class="h2">Checklist</h2>
+        <div id="techChecklist" class="list"></div>
+        
+        <hr />
+        <h2 class="h2">Fotos</h2>
+        <input class="input" id="photoInput" type="file" accept="image/*" capture="environment" />
+        <div class="small" style="margin-top:8px">No mobile, isso abre câmera/galeria.</div>
+        <div style="height:12px"></div>
+        <div class="row" style="gap:10px" id="techPhotos"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODAL EDITAR OS (ADMIN) -->
+  <div id="modalEditOS" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 class="h1">Editar Ordem de Serviço</h2>
+      <div class="small" id="editOSId"></div>
+      
+      <div style="height:20px"></div>
+      
+      <label class="small">Título</label>
+      <input class="input" id="editTitle" />
+      
+      <div style="height:12px"></div>
+      
+      <label class="small">Descrição</label>
+      <textarea class="input" id="editDesc" rows="4"></textarea>
+      
+      <div style="height:12px"></div>
+      
+      <div class="row">
+        <div class="col">
+          <label class="small">Prioridade (1-5)</label>
+          <input class="input" id="editPriority" type="number" min="1" max="5" />
+        </div>
+        <div class="col">
+          <label class="small">Status</label>
+          <select class="input" id="editStatus">
+            <option value="NEW">NEW</option>
+            <option value="ASSIGNED">ASSIGNED</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+            <option value="DONE">DONE</option>
+            <option value="CANCELED">CANCELED</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="height:12px"></div>
+      
+      <label class="small">Técnico Responsável</label>
+      <select class="input" id="editAssignedTo">
+        <option value="">Nenhum</option>
+      </select>
+      
+      <div style="height:20px"></div>
+      
+      <div style="display:flex; gap:10px; justify-content:flex-end">
+        <button class="btn" id="btnCloseEdit">Cancelar</button>
+        <button class="btn warning" id="btnReopenOS" style="display:none">Reabrir</button>
+        <button class="btn primary" id="btnSaveEdit">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ADICIONAR/EDITAR USUÁRIO -->
+  <div id="modalAddUser" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 class="h1" id="modalUserTitle">Adicionar Usuário</h2>
+      <div class="small" style="background: #f0f9ff; padding: 10px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #bae6fd;">
+        O usuário será criado sem confirmação de email. Ele poderá fazer login imediatamente com a senha informada.
+      </div>
+      
+      <div style="height:10px"></div>
+      
+      <label class="small">Nome Completo *</label>
+      <input class="input" id="newUserName" placeholder="João da Silva" />
+      
+      <div style="height:12px"></div>
+      
+      <label class="small">Email *</label>
+      <input class="input" id="newUserEmail" type="email" placeholder="joao@empresa.com" />
+      
+      <div style="height:12px"></div>
+      
+      <label class="small">Senha *</label>
+      <input class="input" id="newUserPassword" type="password" placeholder="Mínimo 6 caracteres" />
+      
+      <div style="height:12px"></div>
+      
+      <label class="small">Papel (Role) *</label>
+      <select class="input" id="newUserRole">
+        <option value="TECH">Técnico</option>
+        <option value="ANALYST">Analista</option>
+        <option value="ADMIN">Administrador</option>
+      </select>
+      
+      <div style="height:20px"></div>
+      
+      <div style="display:flex; gap:10px; justify-content:flex-end">
+        <button class="btn" id="btnCloseAddUser">Cancelar</button>
+        <button class="btn primary" id="btnSaveUser">
+          <span id="btnSaveUserText">Criar Usuário</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVA OS PARA ADMIN -->
+  <div id="modalNewOSAdmin" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 800px;">
+      <h2 class="h1">Nova Ordem de Serviço (Admin)</h2>
+      
+      <div style="height:20px"></div>
+      
+      <div class="row">
+        <div class="col">
+          <label class="small">Título *</label>
+          <input class="input" id="newOSTitleAdmin" />
+          
+          <div style="height:10px"></div>
+          <label class="small">Descrição</label>
+          <textarea class="input" id="newOSDescAdmin" rows="4"></textarea>
+          
+          <div style="height:10px"></div>
+          <label class="small">Prioridade (1 alta • 5 baixa) *</label>
+          <input class="input" id="newOSPriorityAdmin" type="number" min="1" max="5" value="3" />
+          
+          <div style="height:10px"></div>
+          <label class="small">Status *</label>
+          <select class="input" id="newOSStatusAdmin">
+            <option value="NEW">NEW</option>
+            <option value="ASSIGNED">ASSIGNED</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+          </select>
+        </div>
+        
+        <div class="col">
+          <h3 class="h3">Endereço</h3>
+          
+          <label class="small">Endereço (linha 1) *</label>
+          <input class="input" id="newOSAddr1Admin" />
+          
+          <div style="height:10px"></div>
+          <label class="small">Complemento</label>
+          <input class="input" id="newOSAddr2Admin" />
+          
+          <div style="height:10px"></div>
+          
+          <div class="row">
+            <div class="col">
+              <label class="small">Cidade *</label>
+              <input class="input" id="newOSCityAdmin" />
+            </div>
+            <div class="col">
+              <label class="small">UF *</label>
+              <input class="input" id="newOSStateAdmin" maxlength="2" placeholder="SP" />
+            </div>
+            <div class="col">
+              <label class="small">CEP</label>
+              <input class="input" id="newOSZipAdmin" placeholder="00000-000" />
+            </div>
+          </div>
+          
+          <div style="height:10px"></div>
+          
+          <label class="small">Técnico Responsável</label>
+          <select class="input" id="newOSTechAdmin">
+            <option value="">Não atribuir</option>
+          </select>
+          
+          <div style="height:10px"></div>
+          
+          <label class="small">Analista Criador</label>
+          <select class="input" id="newOSAnalystAdmin">
+            <option value="">Eu mesmo (admin)</option>
+          </select>
+        </div>
+      </div>
+      
+      <hr />
+      
+      <h3 class="h3">Checklist</h3>
+      <div class="small">Itens obrigatórios bloqueiam finalização.</div>
+      <div style="height:10px"></div>
+      
+      <div id="newOSChkListAdmin" class="list"></div>
+      <div style="height:10px"></div>
+      <button class="btn" id="btnAddChkAdmin">+ Adicionar item</button>
+      
+      <div style="height:20px"></div>
+      
+      <div style="display:flex; gap:10px; justify-content:flex-end">
+        <button class="btn" id="btnCancelNewOSAdmin">Cancelar</button>
+        <button class="btn primary" id="btnSaveNewOSAdmin">Criar OS</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -55,11 +916,6 @@
     let adminTechs = [];
     let adminAnalysts = [];
     let editingUserId = null;
-
-    // Estado analista
-    let analystOrders = [];
-    let analystSelectedOrder = null;
-    let analystTechs = [];
 
     // ---------- PERSONALIZAÇÃO ----------
     async function loadCustomization() {
@@ -272,6 +1128,50 @@
       }
     }
 
+    // ---------- FUNÇÕES DE PERFIL ----------
+    async function ensureProfile(userId, userEmail, userMetadata) {
+      try {
+        // Primeiro verifica se já existe
+        const { data: existingProfile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (fetchError) {
+          console.warn("Erro ao buscar perfil:", fetchError);
+        }
+        
+        // Se não existe, cria
+        if (!existingProfile) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              email: userEmail,
+              full_name: userMetadata?.full_name || '',
+              role: userMetadata?.role || 'TECH',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
+            });
+            
+          if (insertError) {
+            console.error("Erro ao criar perfil:", insertError);
+            return false;
+          }
+          
+          console.log("Perfil criado para:", userEmail);
+        }
+        
+        return true;
+      } catch (err) {
+        console.error("Erro ao garantir perfil:", err);
+        return false;
+      }
+    }
+
     // ---------- LOGIN ----------
     $("formLogin").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -303,7 +1203,10 @@
         console.log("Login bem sucedido:", data.user.email);
         me = { id: data.user.id, email: data.user.email };
         
-        // Busca perfil
+        // Garante que tem perfil
+        await ensureProfile(data.user.id, data.user.email, data.user.user_metadata);
+        
+        // Busca perfil atualizado
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("id, full_name, role")
@@ -317,7 +1220,7 @@
         }
         
         if (!profileData) {
-          console.error("Perfil não encontrado");
+          console.error("Perfil não encontrado após garantir");
           toast("Erro crítico no perfil. Contate o administrador.", 'error');
           await supabase.auth.signOut();
           me = null;
@@ -372,157 +1275,7 @@
       }
     });
 
-    // ---------- ANALYST FUNCTIONS ----------
-    async function loadAnalystOrders() {
-      try {
-        const status = $("analystStatus").value;
-        
-        let q = supabase.from("service_orders").select("*").order("created_at", { ascending: false });
-        if (status !== "ALL") q = q.eq("status", status);
-        
-        const { data, error } = await q;
-        if (error) {
-          toast(error.message, 'error');
-          return;
-        }
-        
-        analystOrders = data || [];
-        renderAnalystCounts(analystOrders);
-        renderAnalystList(analystOrders);
-      } catch (err) {
-        console.error("Erro ao carregar ordens:", err);
-        toast("Erro ao carregar ordens.", 'error');
-      }
-    }
-
-    function renderAnalystCounts(orders) {
-      const c = {};
-      for (const o of orders) c[o.status] = (c[o.status] ?? 0) + 1;
-      $("analystCounts").innerHTML = `
-        <span class="badge new">NEW ${c["NEW"] ?? 0}</span>
-        <span class="badge assigned">ASSIGNED ${c["ASSIGNED"] ?? 0}</span>
-        <span class="badge in_progress">IN_PROGRESS ${c["IN_PROGRESS"] ?? 0}</span>
-        <span class="badge done">DONE ${c["DONE"] ?? 0}</span>
-        <span class="badge canceled">CANCELED ${c["CANCELED"] ?? 0}</span>
-      `;
-    }
-
-    function renderAnalystList(orders) {
-      const el = $("analystList");
-      el.innerHTML = "";
-
-      if (!orders.length) {
-        const empty = document.createElement("div");
-        empty.className = "card";
-        empty.textContent = "Sem OS para o filtro selecionado.";
-        el.appendChild(empty);
-        return;
-      }
-
-      for (const o of orders) {
-        const card = document.createElement("div");
-        card.className = "card";
-
-        card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap">
-            <div>
-              <div style="font-weight:900">${escapeHtml(o.title)}</div>
-              <div class="small">${escapeHtml(o.city)} - ${escapeHtml(o.state)} • ${escapeHtml(o.address_line1)}</div>
-              <div class="kv" style="margin-top:6px">
-                <span class="badge ${o.status.toLowerCase()}">${o.status}</span>
-                <span class="badge priority">P${String(o.priority)}</span>
-              </div>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center">
-              <button class="btn assign-btn" data-id="${o.id}">${o.assigned_to ? "Reatribuir" : "Atribuir"}</button>
-            </div>
-          </div>
-        `;
-        
-        // Adiciona evento ao botão de atribuir/reatribuir
-        card.querySelector(".assign-btn").addEventListener("click", (e) => {
-          e.stopPropagation();
-          openAssignPanel(o);
-        });
-        
-        el.appendChild(card);
-      }
-    }
-
-    async function openAssignPanel(order) {
-      analystSelectedOrder = order;
-      
-      // Carrega técnicos disponíveis
-      await loadAnalystTechs();
-      
-      $("assignSubtitle").textContent = `OS: ${escapeHtml(order.title)}`;
-      
-      const select = $("assignTech");
-      select.innerHTML = '<option value="">Selecione um técnico</option>';
-      
-      analystTechs.forEach(tech => {
-        const option = document.createElement("option");
-        option.value = tech.id;
-        option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
-        if (order.assigned_to === tech.id) {
-          option.selected = true;
-        }
-        select.appendChild(option);
-      });
-      
-      show($("panelAssign"));
-    }
-
-    async function loadAnalystTechs() {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, role")
-          .eq("role", "TECH")
-          .order("full_name");
-          
-        if (error) throw error;
-        
-        analystTechs = data || [];
-      } catch (err) {
-        console.error("Erro ao carregar técnicos:", err);
-        toast("Erro ao carregar lista de técnicos.", 'error');
-      }
-    }
-
-    async function saveAssign() {
-      if (!analystSelectedOrder) return;
-      
-      const techId = $("assignTech").value;
-      
-      if (!techId) {
-        toast("Selecione um técnico.", 'error');
-        return;
-      }
-      
-      try {
-        const { error } = await supabase
-          .from("service_orders")
-          .update({ 
-            assigned_to: techId,
-            status: "ASSIGNED",
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", analystSelectedOrder.id);
-          
-        if (error) throw error;
-        
-        toast("OS atribuída com sucesso!", 'success');
-        hide($("panelAssign"));
-        await loadAnalystOrders();
-        
-      } catch (err) {
-        console.error("Erro ao atribuir OS:", err);
-        toast("Erro ao atribuir OS: " + err.message, 'error');
-      }
-    }
-
-    // ---------- ADMIN FUNCTIONS ----------
+    // ---------- ADMIN ----------
     async function loadAdminData() {
       await Promise.all([
         loadAdminOrders(),
@@ -563,6 +1316,84 @@
       } catch (err) {
         console.error("Erro ao carregar ordens:", err);
         toast("Erro ao carregar ordens.", 'error');
+      }
+    }
+
+    async function loadAdminTechs() {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, role")
+          .in("role", ["TECH", "ADMIN"])
+          .order("full_name");
+          
+        if (error) throw error;
+        
+        adminTechs = data || [];
+        
+        const techSelect = $("adminFilterTech");
+        if (techSelect) {
+          techSelect.innerHTML = '<option value="ALL">Todos os técnicos</option>';
+          adminTechs.forEach(tech => {
+            const option = document.createElement("option");
+            option.value = tech.id;
+            option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
+            techSelect.appendChild(option);
+          });
+        }
+        
+        const newOSTechSelect = $("newOSTechAdmin");
+        if (newOSTechSelect) {
+          newOSTechSelect.innerHTML = '<option value="">Não atribuir</option>';
+          adminTechs.forEach(tech => {
+            const option = document.createElement("option");
+            option.value = tech.id;
+            option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
+            newOSTechSelect.appendChild(option);
+          });
+        }
+        
+        const editTechSelect = $("editAssignedTo");
+        if (editTechSelect) {
+          editTechSelect.innerHTML = '<option value="">Nenhum</option>';
+          adminTechs.forEach(tech => {
+            const option = document.createElement("option");
+            option.value = tech.id;
+            option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
+            editTechSelect.appendChild(option);
+          });
+        }
+        
+      } catch (err) {
+        console.error("Erro ao carregar técnicos:", err);
+      }
+    }
+
+    async function loadAdminAnalysts() {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, role")
+          .in("role", ["ANALYST", "ADMIN"])
+          .order("full_name");
+          
+        if (error) throw error;
+        
+        adminAnalysts = data || [];
+        
+        const analystSelect = $("newOSAnalystAdmin");
+        if (analystSelect) {
+          analystSelect.innerHTML = '<option value="">Eu mesmo (admin)</option>';
+          adminAnalysts.forEach(analyst => {
+            const option = document.createElement("option");
+            option.value = analyst.id;
+            option.textContent = `${analyst.full_name || analyst.email} (${analyst.role})`;
+            analystSelect.appendChild(option);
+          });
+        }
+        
+      } catch (err) {
+        console.error("Erro ao carregar analistas:", err);
       }
     }
 
@@ -667,13 +1498,27 @@
 
     async function loadAdminUsers() {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, email, full_name, role, created_at')
-          .order('created_at', { ascending: false });
+        // Primeiro tenta usar a RPC
+        try {
+          const { data, error } = await supabase.rpc('list_all_users');
           
-        if (error) throw error;
-        adminUsers = data || [];
+          if (!error && data) {
+            adminUsers = data;
+          } else {
+            throw new Error('RPC falhou, usando query direta');
+          }
+        } catch (rpcError) {
+          console.log("RPC falhou, usando query direta:", rpcError);
+          
+          const { data: directData, error: directError } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, role, created_at')
+            .order('created_at', { ascending: false });
+            
+          if (directError) throw directError;
+          adminUsers = directData || [];
+        }
+        
         renderAdminUsers();
       } catch (err) {
         console.error("Erro ao carregar usuários:", err);
@@ -810,40 +1655,104 @@
           
           toast("Usuário atualizado com sucesso!", 'success');
         } else {
-          // Criar novo usuário
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { 
-              data: { full_name: name, role: role },
-              emailRedirectTo: window.location.origin
-            }
-          });
+          // Criar novo usuário - usando admin API se disponível
+          console.log("Criando novo usuário:", email);
           
-          if (authError) {
-            if (authError.message.includes('already registered')) {
-              // Usuário já existe, atualiza o perfil
-              const { data: existingUser } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('email', email)
-                .maybeSingle();
+          try {
+            // Primeiro tenta criar com signUp
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+              email,
+              password,
+              options: { 
+                data: { full_name: name, role: role },
+                emailRedirectTo: window.location.origin
+              }
+            });
+            
+            if (authError) {
+              if (authError.message.includes('already registered')) {
+                console.log("Usuário já existe, atualizando perfil");
                 
-              if (existingUser) {
-                await supabase
+                // Busca o usuário existente
+                const { data: existingUser, error: fetchError } = await supabase
                   .from('profiles')
-                  .update({ full_name: name, role: role })
-                  .eq('id', existingUser.id);
+                  .select('id')
+                  .eq('email', email)
+                  .maybeSingle();
                   
-                toast(`Usuário ${name} atualizado!`, 'success');
+                if (existingUser) {
+                  // Atualiza o perfil existente
+                  const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ full_name: name, role: role })
+                    .eq('id', existingUser.id);
+                    
+                  if (updateError) throw updateError;
+                  
+                  toast(`Usuário ${name} atualizado com sucesso!`, 'success');
+                } else {
+                  throw new Error('Usuário já existe mas não foi encontrado no perfil');
+                }
               } else {
-                throw new Error('Usuário já existe mas perfil não encontrado');
+                throw authError;
               }
             } else {
-              throw authError;
+              console.log("Usuário criado via signUp:", authData.user?.id);
+              
+              // Aguarda um pouco para garantir que o perfil foi criado
+              setTimeout(async () => {
+                try {
+                  // Atualiza o perfil com nome e role
+                  const { error: profileError } = await supabase
+                    .from('profiles')
+                    .update({ 
+                      full_name: name, 
+                      role: role,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', authData.user?.id);
+                    
+                  if (profileError) {
+                    console.warn("Erro ao atualizar perfil após criação:", profileError);
+                  }
+                } catch (err) {
+                  console.warn("Erro ao atualizar perfil:", err);
+                }
+              }, 1000);
+              
+              toast(`Usuário ${name} criado com sucesso! O usuário pode fazer login imediatamente.`, 'success');
             }
-          } else {
-            toast(`Usuário ${name} criado com sucesso!`, 'success');
+          } catch (signUpError) {
+            console.error("Erro no signUp:", signUpError);
+            
+            // Fallback: tenta criar apenas o perfil
+            try {
+              // Primeiro precisamos obter o ID do usuário
+              const { data: authUsers } = await supabase.auth.admin.listUsers();
+              const existingAuthUser = authUsers?.users?.find(u => u.email === email);
+              
+              if (existingAuthUser) {
+                // Usuário existe no auth mas não no perfil
+                const { error: insertError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: existingAuthUser.id,
+                    email: email,
+                    full_name: name,
+                    role: role,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  });
+                  
+                if (insertError) throw insertError;
+                toast(`Perfil criado para usuário existente ${name}!`, 'success');
+              } else {
+                throw new Error('Não foi possível criar o usuário. Tente criar manualmente no painel do Supabase.');
+              }
+            } catch (fallbackError) {
+              console.error("Erro no fallback:", fallbackError);
+              throw new Error(`Não foi possível criar o usuário: ${fallbackError.message}. Verifique se o email já está registrado.`);
+            }
           }
         }
         
@@ -885,51 +1794,6 @@
       } catch (err) {
         console.error("Erro ao remover usuário:", err);
         toast("Erro ao remover usuário: " + err.message, 'error');
-      }
-    }
-
-    async function loadAdminTechs() {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, role")
-          .in("role", ["TECH", "ADMIN"])
-          .order("full_name");
-          
-        if (error) throw error;
-        
-        adminTechs = data || [];
-        
-        const techSelect = $("adminFilterTech");
-        if (techSelect) {
-          techSelect.innerHTML = '<option value="ALL">Todos os técnicos</option>';
-          adminTechs.forEach(tech => {
-            const option = document.createElement("option");
-            option.value = tech.id;
-            option.textContent = `${tech.full_name || tech.email} (${tech.role})`;
-            techSelect.appendChild(option);
-          });
-        }
-        
-      } catch (err) {
-        console.error("Erro ao carregar técnicos:", err);
-      }
-    }
-
-    async function loadAdminAnalysts() {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, role")
-          .in("role", ["ANALYST", "ADMIN"])
-          .order("full_name");
-          
-        if (error) throw error;
-        
-        adminAnalysts = data || [];
-        
-      } catch (err) {
-        console.error("Erro ao carregar analistas:", err);
       }
     }
 
@@ -1020,33 +1884,629 @@
       }
     }
 
+    // ---------- NOVA OS PARA ADMIN ----------
+    async function openNewOSModalAdmin() {
+      $("newOSTitleAdmin").value = "";
+      $("newOSDescAdmin").value = "";
+      $("newOSPriorityAdmin").value = "3";
+      $("newOSStatusAdmin").value = "NEW";
+      $("newOSAddr1Admin").value = "";
+      $("newOSAddr2Admin").value = "";
+      $("newOSCityAdmin").value = "";
+      $("newOSStateAdmin").value = "";
+      $("newOSZipAdmin").value = "";
+      $("newOSTechAdmin").value = "";
+      $("newOSAnalystAdmin").value = "";
+      
+      $("newOSChkListAdmin").innerHTML = "";
+      addChecklistRowAdmin("Checar condição do local", true);
+      addChecklistRowAdmin("Executar procedimento principal", true);
+      addChecklistRowAdmin("Registrar evidências (fotos)", true);
+      
+      show($("modalNewOSAdmin"));
+    }
+
+    function addChecklistRowAdmin(label = "", required = true) {
+      const wrap = document.createElement("div");
+      wrap.className = "card";
+      wrap.style.padding = "10px";
+
+      wrap.innerHTML = `
+        <label class="small">Item</label>
+        <input class="input" data-role="label" value="${escapeHtml(label)}" />
+        <div style="height:8px"></div>
+        <label class="small" style="display:flex; gap:8px; align-items:center">
+          <input type="checkbox" data-role="required" ${required ? "checked" : ""} />
+          Obrigatório
+        </label>
+        <div style="height:8px"></div>
+        <button class="btn danger" data-role="remove">Remover</button>
+      `;
+
+      wrap.querySelector('[data-role="remove"]').addEventListener("click", () => wrap.remove());
+      $("newOSChkListAdmin").appendChild(wrap);
+    }
+
+    function readChecklistUIAdmin() {
+      const rows = Array.from($("newOSChkListAdmin").children);
+      return rows.map((row, i) => ({
+        label: row.querySelector('[data-role="label"]').value.trim(),
+        required: row.querySelector('[data-role="required"]').checked,
+        sort: i
+      })).filter(x => x.label.length > 0);
+    }
+
+    async function saveNewOSAdmin() {
+      const title = $("newOSTitleAdmin").value.trim();
+      const description = $("newOSDescAdmin").value.trim();
+      const priority = Number($("newOSPriorityAdmin").value || 3);
+      const status = $("newOSStatusAdmin").value;
+      
+      const address_line1 = $("newOSAddr1Admin").value.trim();
+      const address_line2 = $("newOSAddr2Admin").value.trim();
+      const city = $("newOSCityAdmin").value.trim();
+      const state = $("newOSStateAdmin").value.trim();
+      const zip = $("newOSZipAdmin").value.trim();
+      
+      const assigned_to = $("newOSTechAdmin").value || null;
+      const created_by = $("newOSAnalystAdmin").value || me.id;
+      
+      if (!title) {
+        toast("Informe o título.", 'error');
+        return;
+      }
+      
+      if (!address_line1 || !city || !state) {
+        toast("Informe endereço/cidade/UF.", 'error');
+        return;
+      }
+      
+      const checklist = readChecklistUIAdmin();
+      if (!checklist.length) {
+        toast("Inclua pelo menos 1 item no checklist.", 'error');
+        return;
+      }
+      
+      try {
+        $("btnSaveNewOSAdmin").disabled = true;
+        
+        const { data: so, error: e1 } = await supabase
+          .from("service_orders")
+          .insert([{
+            title,
+            description: description ? description : null,
+            priority,
+            address_line1,
+            address_line2: address_line2 ? address_line2 : null,
+            city,
+            state,
+            zip: zip ? zip : null,
+            created_by: created_by,
+            assigned_to: assigned_to,
+            status: status
+          }])
+          .select("id")
+          .single();
+          
+        if (e1) throw e1;
+        
+        const items = checklist.map(c => ({
+          service_order_id: so.id,
+          label: c.label,
+          required: c.required,
+          sort: c.sort
+        }));
+        
+        const { error: e2 } = await supabase
+          .from("service_order_checklist_items")
+          .insert(items);
+          
+        if (e2) throw e2;
+        
+        toast("OS criada com sucesso!", 'success');
+        hide($("modalNewOSAdmin"));
+        await loadAdminOrders();
+        
+      } catch (err) {
+        console.error("Erro ao criar OS:", err);
+        toast(err.message ?? "Erro ao criar OS.", 'error');
+      } finally {
+        $("btnSaveNewOSAdmin").disabled = false;
+      }
+    }
+
+    // ---------- TAB SWITCHING ----------
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        
+        const tabName = tab.dataset.tab;
+        document.querySelectorAll(".tab-content").forEach(content => {
+          hide(content);
+        });
+        
+        show($(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`));
+      });
+    });
+
+    // ---------- ANALYST FUNCTIONS ----------
+    let analystOrders = [];
+    let selectedOrderForAssign = null;
+    
+    async function loadAnalystOrders() {
+      try {
+        const status = $("analystStatus").value;
+        
+        let q = supabase.from("service_orders").select("*").order("created_at", { ascending: false });
+        if (status !== "ALL") q = q.eq("status", status);
+        
+        const { data, error } = await q;
+        if (error) {
+          toast(error.message, 'error');
+          return;
+        }
+        
+        analystOrders = data || [];
+        renderAnalystCounts(analystOrders);
+        renderAnalystList(analystOrders);
+      } catch (err) {
+        console.error("Erro ao carregar ordens:", err);
+        toast("Erro ao carregar ordens.", 'error');
+      }
+    }
+
+    function renderAnalystCounts(orders) {
+      const c = {};
+      for (const o of orders) c[o.status] = (c[o.status] ?? 0) + 1;
+      $("analystCounts").innerHTML = `
+        <span class="badge">NEW ${c["NEW"] ?? 0}</span>
+        <span class="badge">ASSIGNED ${c["ASSIGNED"] ?? 0}</span>
+        <span class="badge">IN_PROGRESS ${c["IN_PROGRESS"] ?? 0}</span>
+        <span class="badge">DONE ${c["DONE"] ?? 0}</span>
+      `;
+    }
+
+    function renderAnalystList(orders) {
+      const el = $("analystList");
+      el.innerHTML = "";
+
+      if (!orders.length) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "Sem OS para o filtro selecionado.";
+        el.appendChild(empty);
+        return;
+      }
+
+      for (const o of orders) {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:900">${escapeHtml(o.title)}</div>
+              <div class="small">${escapeHtml(o.city)} - ${escapeHtml(o.state)} • ${escapeHtml(o.address_line1)}</div>
+              <div class="kv" style="margin-top:6px">
+                <span class="badge">${o.status}</span>
+                <span class="badge">P${String(o.priority)}</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center">
+              <button class="btn" data-role="assign">${o.assigned_to ? "Reatribuir" : "Atribuir"}</button>
+            </div>
+          </div>
+        `;
+        card.querySelector('[data-role="assign"]').addEventListener("click", () => openAssignPanel(o));
+        el.appendChild(card);
+      }
+    }
+
+    async function openNewOSPanel() {
+        // Esconde a lista principal
+        hide($("analystList"));
+        // Mostra o painel de criação
+        show($("panelNewOS"));
+        
+        // Limpa os campos
+        $("newTitle").value = "";
+        $("newDesc").value = "";
+        $("newPriority").value = "3";
+        $("newAddr1").value = "";
+        $("newAddr2").value = "";
+        $("newCity").value = "";
+        $("newState").value = "";
+        $("newZip").value = "";
+        
+        // Reinicia o checklist
+        $("chkList").innerHTML = "";
+        addChecklistRow("Checar condição do local", true);
+        addChecklistRow("Executar procedimento principal", true);
+        addChecklistRow("Registrar evidências (fotos)", true);
+    }
+
+    function addChecklistRow(label = "", required = true) {
+        const wrap = document.createElement("div");
+        wrap.className = "card";
+        wrap.style.padding = "10px";
+        wrap.innerHTML = `
+            <label class="small">Item</label>
+            <input class="input" data-role="label" value="${escapeHtml(label)}" />
+            <div style="height:8px"></div>
+            <label class="small" style="display:flex; gap:8px; align-items:center">
+                <input type="checkbox" data-role="required" ${required ? "checked" : ""} />
+                Obrigatório
+            </label>
+            <div style="height:8px"></div>
+            <button class="btn danger" data-role="remove">Remover</button>
+        `;
+        wrap.querySelector('[data-role="remove"]').addEventListener("click", () => wrap.remove());
+        $("chkList").appendChild(wrap);
+    }
+
+    async function openAssignPanel(order) {
+        selectedOrderForAssign = order;
+        
+        // Esconde a lista principal
+        hide($("analystList"));
+        // Mostra o painel de atribuição
+        show($("panelAssign"));
+        
+        // Atualiza o subtítulo
+        $("assignSubtitle").textContent = `OS: ${escapeHtml(order.title)} (${order.city} - ${order.state})`;
+        
+        // Carrega a lista de técnicos
+        await loadTechsForAssign();
+    }
+
+    async function loadTechsForAssign() {
+        try {
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("id, full_name, email")
+                .eq("role", "TECH")
+                .order("full_name");
+                
+            if (error) throw error;
+            
+            const select = $("assignTech");
+            select.innerHTML = '<option value="">Selecione um técnico</option>';
+            
+            (data || []).forEach(tech => {
+                const option = document.createElement("option");
+                option.value = tech.id;
+                option.textContent = `${tech.full_name || tech.email} (${tech.email})`;
+                // Seleciona o técnico atual se já estiver atribuído
+                if (selectedOrderForAssign?.assigned_to === tech.id) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error("Erro ao carregar técnicos:", err);
+            toast("Erro ao carregar lista de técnicos.", 'error');
+        }
+    }
+
+    async function saveAssignment() {
+        if (!selectedOrderForAssign) return;
+        
+        const techId = $("assignTech").value;
+        if (!techId) {
+            toast("Selecione um técnico.", 'error');
+            return;
+        }
+        
+        try {
+            const { error } = await supabase
+                .from("service_orders")
+                .update({ 
+                    assigned_to: techId,
+                    status: "ASSIGNED",
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", selectedOrderForAssign.id);
+                
+            if (error) throw error;
+            
+            toast("OS atribuída com sucesso!", 'success');
+            
+            // Volta para a lista
+            hide($("panelAssign"));
+            show($("analystList"));
+            await loadAnalystOrders();
+            
+        } catch (err) {
+            console.error("Erro ao atribuir OS:", err);
+            toast("Erro ao atribuir OS: " + err.message, 'error');
+        }
+    }
+
+    async function saveNewOS() {
+        const title = $("newTitle").value.trim();
+        const description = $("newDesc").value.trim();
+        const priority = Number($("newPriority").value || 3);
+        
+        const address_line1 = $("newAddr1").value.trim();
+        const address_line2 = $("newAddr2").value.trim();
+        const city = $("newCity").value.trim();
+        const state = $("newState").value.trim();
+        const zip = $("newZip").value.trim();
+        
+        if (!title) {
+            toast("Informe o título.", 'error');
+            return;
+        }
+        
+        if (!address_line1 || !city || !state) {
+            toast("Informe endereço/cidade/UF.", 'error');
+            return;
+        }
+        
+        // Lê checklist
+        const checklistRows = Array.from($("chkList").children);
+        const checklist = checklistRows.map((row, i) => ({
+            label: row.querySelector('[data-role="label"]').value.trim(),
+            required: row.querySelector('[data-role="required"]').checked,
+            sort: i
+        })).filter(x => x.label.length > 0);
+        
+        if (!checklist.length) {
+            toast("Inclua pelo menos 1 item no checklist.", 'error');
+            return;
+        }
+        
+        try {
+            $("btnSaveNewOS").disabled = true;
+            
+            // Cria a OS
+            const { data: so, error: e1 } = await supabase
+                .from("service_orders")
+                .insert([{
+                    title,
+                    description: description ? description : null,
+                    priority,
+                    address_line1,
+                    address_line2: address_line2 ? address_line2 : null,
+                    city,
+                    state,
+                    zip: zip ? zip : null,
+                    created_by: me.id,
+                    status: "NEW"
+                }])
+                .select("id")
+                .single();
+                
+            if (e1) throw e1;
+            
+            // Cria itens do checklist
+            const items = checklist.map(c => ({
+                service_order_id: so.id,
+                label: c.label,
+                required: c.required,
+                sort: c.sort
+            }));
+            
+            const { error: e2 } = await supabase
+                .from("service_order_checklist_items")
+                .insert(items);
+                
+            if (e2) throw e2;
+            
+            toast("OS criada com sucesso!", 'success');
+            
+            // Volta para a lista
+            hide($("panelNewOS"));
+            show($("analystList"));
+            await loadAnalystOrders();
+            
+        } catch (err) {
+            console.error("Erro ao criar OS:", err);
+            toast(err.message ?? "Erro ao criar OS.", 'error');
+        } finally {
+            $("btnSaveNewOS").disabled = false;
+        }
+    }
+
+    // ---------- TECH FUNCTIONS ----------
+    let techOrders = [];
+    let currentTechOrder = null;
+    
+    async function loadTechOrders() {
+      try {
+        const { data, error } = await supabase
+          .from("service_orders")
+          .select("*")
+          .or(`assigned_to.eq.${me.id},status.eq.NEW`)
+          .order("updated_at", { ascending: false });
+          
+        if (error) {
+          console.error("Erro ao carregar ordens do técnico:", error);
+          throw error;
+        }
+        
+        techOrders = data || [];
+        renderTechList(techOrders);
+      } catch (err) {
+        console.error("Erro ao carregar ordens do técnico:", err);
+        toast("Erro ao carregar ordens: " + err.message, 'error');
+      }
+    }
+
+    function renderTechList(orders) {
+      const el = $("techList");
+      el.innerHTML = "";
+
+      if (!orders.length) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "Nenhuma OS atribuída no momento.";
+        el.appendChild(empty);
+        return;
+      }
+
+      for (const o of orders) {
+        const card = document.createElement("div");
+        card.className = "card click";
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:900">${escapeHtml(o.title)}</div>
+              <div class="small">${escapeHtml(o.city)} - ${escapeHtml(o.state)} • ${escapeHtml(o.address_line1)}</div>
+              <div class="kv" style="margin-top:6px">
+                <span class="badge">${o.status}</span>
+                <span class="badge">P${String(o.priority)}</span>
+              </div>
+            </div>
+            <div class="small">Atualizado: ${new Date(o.updated_at).toLocaleString()}</div>
+          </div>
+        `;
+        card.addEventListener("click", () => openTechDetail(o.id));
+        el.appendChild(card);
+      }
+    }
+
+    async function openTechDetail(orderId) {
+        try {
+            // Busca a OS com checklist e fotos
+            const { data: order, error: orderError } = await supabase
+                .from("service_orders")
+                .select(`
+                    *,
+                    checklist_items:service_order_checklist_items(*),
+                    photos:service_order_photos(*)
+                `)
+                .eq("id", orderId)
+                .single();
+                
+            if (orderError) throw orderError;
+            
+            currentTechOrder = order;
+            
+            // Atualiza a interface
+            $("techTitle").textContent = order.title;
+            $("techSub").textContent = `${order.city} - ${order.state} • ${order.address_line1}`;
+            $("techStatus").textContent = order.status;
+            $("techStatus").className = `badge ${order.status.toLowerCase().replace('_', '-')}`;
+            
+            // Calcula pendências obrigatórias
+            const pendingRequired = (order.checklist_items || [])
+                .filter(item => item.required && !item.checked)
+                .length;
+            $("techPending").textContent = `Checklist obrigatório pendente: ${pendingRequired}`;
+            $("techPending").style.display = pendingRequired > 0 ? "inline-flex" : "none";
+            
+            // Link para mapas
+            const address = encodeURIComponent(`${order.address_line1}, ${order.city}, ${order.state}`);
+            $("btnMaps").href = `https://maps.google.com/?q=${address}`;
+            
+            // Gerencia visibilidade dos botões de ação
+            $("btnStart").style.display = order.status === "ASSIGNED" ? "inline-flex" : "none";
+            $("btnFinish").style.display = order.status === "IN_PROGRESS" ? "inline-flex" : "none";
+            
+            // Renderiza checklist
+            renderTechChecklist(order.checklist_items || []);
+            
+            // Renderiza fotos
+            renderTechPhotos(order.photos || []);
+            
+            // Mostra o painel de detalhes
+            show($("panelTechDetail"));
+            
+        } catch (err) {
+            console.error("Erro ao carregar detalhes da OS:", err);
+            toast("Erro ao carregar detalhes da OS.", 'error');
+        }
+    }
+
+    function renderTechChecklist(items) {
+        const container = $("techChecklist");
+        container.innerHTML = "";
+        
+        items.sort((a, b) => a.sort - b.sort).forEach(item => {
+            const div = document.createElement("div");
+            div.className = "card";
+            div.innerHTML = `
+                <label style="display:flex; gap:10px; align-items:center">
+                    <input type="checkbox" ${item.checked ? "checked" : ""} 
+                           data-id="${item.id}" ${currentTechOrder?.status === "DONE" ? "disabled" : ""} />
+                    <div>
+                        <div>${escapeHtml(item.label)}</div>
+                        ${item.required ? '<div class="small" style="color:var(--danger)">(Obrigatório)</div>' : ''}
+                    </div>
+                </label>
+            `;
+            
+            // Listener para marcar/desmarcar
+            const checkbox = div.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener("change", async () => {
+                await updateChecklistItem(item.id, checkbox.checked);
+            });
+            
+            container.appendChild(div);
+        });
+    }
+
+    async function updateChecklistItem(itemId, checked) {
+        try {
+            const { error } = await supabase
+                .from("service_order_checklist_items")
+                .update({ checked, updated_at: new Date().toISOString() })
+                .eq("id", itemId);
+                
+            if (error) throw error;
+            
+            // Recarrega os detalhes
+            if (currentTechOrder) {
+                await openTechDetail(currentTechOrder.id);
+            }
+            
+        } catch (err) {
+            console.error("Erro ao atualizar checklist:", err);
+            toast("Erro ao atualizar item.", 'error');
+        }
+    }
+
+    function renderTechPhotos(photos) {
+        const container = $("techPhotos");
+        container.innerHTML = "";
+        
+        photos.forEach(photo => {
+            const img = document.createElement("img");
+            img.className = "thumb";
+            img.src = photo.url;
+            img.alt = "Foto da OS";
+            img.addEventListener("click", () => window.open(photo.url, '_blank'));
+            container.appendChild(img);
+        });
+    }
+
     // ---------- EVENT LISTENERS ----------
+    $("btnAdminRefresh").addEventListener("click", loadAdminOrders);
+    $("adminFilter").addEventListener("change", loadAdminOrders);
+    $("adminFilterTech").addEventListener("change", loadAdminOrders);
     
-    // Admin listeners
-    $("btnAdminRefresh")?.addEventListener("click", loadAdminOrders);
-    $("adminFilter")?.addEventListener("change", loadAdminOrders);
-    $("adminFilterTech")?.addEventListener("change", loadAdminOrders);
-    
-    $("btnAdminPanel")?.addEventListener("click", () => {
+    $("btnAdminPanel").addEventListener("click", () => {
       if (profile?.role === "ADMIN") {
         show(viewAdmin);
         loadAdminData();
       }
     });
     
-    $("btnNewOSAdmin")?.addEventListener("click", openNewOSModalAdmin);
+    $("btnNewOSAdmin").addEventListener("click", openNewOSModalAdmin);
     
-    $("btnCloseEdit")?.addEventListener("click", () => hide($("modalEditOS")));
-    $("btnSaveEdit")?.addEventListener("click", saveOrderEdit);
-    $("btnReopenOS")?.addEventListener("click", () => {
+    $("btnCloseEdit").addEventListener("click", () => hide($("modalEditOS")));
+    $("btnSaveEdit").addEventListener("click", saveOrderEdit);
+    $("btnReopenOS").addEventListener("click", () => {
       if (adminSelectedOrder) {
         reopenOrder(adminSelectedOrder.id);
         hide($("modalEditOS"));
       }
     });
     
-    $("btnSaveCustomization")?.addEventListener("click", saveCustomization);
-    $("btnResetCustomization")?.addEventListener("click", () => {
+    $("btnSaveCustomization").addEventListener("click", saveCustomization);
+    $("btnResetCustomization").addEventListener("click", () => {
       if (confirm("Restaurar configurações padrão?")) {
         localStorage.removeItem(STORAGE_KEY);
         loadCustomization();
@@ -1054,25 +2514,179 @@
       }
     });
     
-    $("btnAddUser")?.addEventListener("click", () => openEditUserModal());
-    $("btnCloseAddUser")?.addEventListener("click", () => {
+    $("btnAddUser").addEventListener("click", () => openEditUserModal());
+    $("btnCloseAddUser").addEventListener("click", () => {
       hide($("modalAddUser"));
       editingUserId = null;
     });
-    $("btnSaveUser")?.addEventListener("click", saveUser);
+    $("btnSaveUser").addEventListener("click", saveUser);
     
-    // Analyst listeners
-    $("analystStatus")?.addEventListener("change", loadAnalystOrders);
-    $("btnCancelAssign")?.addEventListener("click", () => hide($("panelAssign")));
-    $("btnSaveAssign")?.addEventListener("click", saveAssign);
+    $("btnCancelNewOSAdmin").addEventListener("click", () => hide($("modalNewOSAdmin")));
+    $("btnSaveNewOSAdmin").addEventListener("click", saveNewOSAdmin);
+    $("btnAddChkAdmin").addEventListener("click", () => addChecklistRowAdmin("", true));
     
-    // Tech listeners (se houver)
-    $("btnCloseDetail")?.addEventListener("click", () => {
-      hide($("panelTechDetail"));
-      loadTechOrders();
+    // Sincroniza campos de cor
+    $("headerBgColor").addEventListener("input", function() {
+      $("headerBgColorText").value = this.value;
+      $("headerPreview").style.background = this.value;
+    });
+    
+    $("headerBgColorText").addEventListener("input", function() {
+      $("headerBgColor").value = this.value;
+      $("headerPreview").style.background = this.value;
+    });
+    
+    $("headerTextColor").addEventListener("input", function() {
+      $("headerTextColorText").value = this.value;
+      $("headerPreview").style.color = this.value;
+    });
+    
+    $("headerTextColorText").addEventListener("input", function() {
+      $("headerTextColor").value = this.value;
+      $("headerPreview").style.color = this.value;
+    });
+    
+    // Upload de logo
+    $("logoUpload")?.addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (!file || !file.type.startsWith("image/")) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        $("customLogoUrl").value = e.target.result;
+        $("logoPreview").src = e.target.result;
+        show($("logoPreview"));
+      };
+      reader.readAsDataURL(file);
     });
 
-    // ---------- BOOTSTRAP ----------
+    // Analista
+    $("btnNewOS")?.addEventListener("click", openNewOSPanel);
+    $("btnCancelNewOS")?.addEventListener("click", () => {
+        hide($("panelNewOS"));
+        show($("analystList"));
+    });
+    $("btnAddChk")?.addEventListener("click", () => addChecklistRow("", true));
+    $("btnSaveNewOS")?.addEventListener("click", saveNewOS);
+    
+    $("btnCancelAssign")?.addEventListener("click", () => {
+        hide($("panelAssign"));
+        show($("analystList"));
+    });
+    $("btnSaveAssign")?.addEventListener("click", saveAssignment);
+    
+    // Vincular filtro do analista
+    $("analystStatus")?.addEventListener("change", loadAnalystOrders);
+
+    // Técnico
+    $("btnCloseDetail")?.addEventListener("click", () => {
+        hide($("panelTechDetail"));
+        show($("techList"));
+    });
+
+    $("btnStart")?.addEventListener("click", async () => {
+        if (!currentTechOrder) return;
+        
+        try {
+            const { error } = await supabase
+                .from("service_orders")
+                .update({ status: "IN_PROGRESS", updated_at: new Date().toISOString() })
+                .eq("id", currentTechOrder.id);
+                
+            if (error) throw error;
+            
+            toast("OS iniciada com sucesso!", 'success');
+            await openTechDetail(currentTechOrder.id); // Recarrega
+            await loadTechOrders(); // Atualiza a lista
+            
+        } catch (err) {
+            console.error("Erro ao iniciar OS:", err);
+            toast("Erro ao iniciar OS.", 'error');
+        }
+    });
+
+    $("btnFinish")?.addEventListener("click", async () => {
+        if (!currentTechOrder) return;
+        
+        // Verifica se todos os itens obrigatórios estão concluídos
+        const pendingRequired = (currentTechOrder.checklist_items || [])
+            .filter(item => item.required && !item.checked)
+            .length;
+        
+        if (pendingRequired > 0) {
+            toast(`Conclua os ${pendingRequired} itens obrigatórios antes de finalizar.`, 'error');
+            return;
+        }
+        
+        if (!confirm("Tem certeza que deseja finalizar esta OS?")) return;
+        
+        try {
+            const { error } = await supabase
+                .from("service_orders")
+                .update({ 
+                    status: "DONE", 
+                    finished_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", currentTechOrder.id);
+                
+            if (error) throw error;
+            
+            toast("OS finalizada com sucesso!", 'success');
+            hide($("panelTechDetail"));
+            await loadTechOrders();
+            
+        } catch (err) {
+            console.error("Erro ao finalizar OS:", err);
+            toast("Erro ao finalizar OS.", 'error');
+        }
+    });
+
+    // Listener para upload de fotos
+    $("photoInput")?.addEventListener("change", async (e) => {
+        if (!currentTechOrder || !e.target.files[0]) return;
+        
+        const file = e.target.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${currentTechOrder.id}/${Date.now()}.${fileExt}`;
+        
+        try {
+            const { error: uploadError } = await supabase.storage
+                .from(BUCKET)
+                .upload(fileName, file);
+                
+            if (uploadError) throw uploadError;
+            
+            const { data: { publicUrl } } = supabase.storage
+                .from(BUCKET)
+                .getPublicUrl(fileName);
+            
+            // Salva referência no banco
+            const { error: dbError } = await supabase
+                .from("service_order_photos")
+                .insert({
+                    service_order_id: currentTechOrder.id,
+                    url: publicUrl,
+                    uploaded_by: me.id
+                });
+                
+            if (dbError) throw dbError;
+            
+            // Recarrega fotos
+            if (currentTechOrder) {
+                await openTechDetail(currentTechOrder.id);
+            }
+            
+            toast("Foto enviada com sucesso!", 'success');
+            e.target.value = ""; // Limpa o input
+            
+        } catch (err) {
+            console.error("Erro ao enviar foto:", err);
+            toast("Erro ao enviar foto.", 'error');
+        }
+    });
+
+    // ---------- BOOTSTRAP SIMPLIFICADO ----------
     async function bootstrap() {
       console.log("=== BOOTSTRAP INICIADO ===");
       
@@ -1101,7 +2715,7 @@
         console.log("Sessão encontrada para:", session.user.email);
         me = { id: session.user.id, email: session.user.email };
         
-        // Busca perfil
+        // Busca perfil DIRETAMENTE
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("id, full_name, role")
@@ -1110,11 +2724,21 @@
         
         if (profileError) {
           console.error("Erro ao buscar perfil:", profileError);
+          // Cria perfil básico localmente
           profile = {
             id: session.user.id,
             full_name: session.user.user_metadata?.full_name || '',
             role: session.user.user_metadata?.role || 'TECH'
           };
+          
+          // Tenta salvar no banco (não bloqueante)
+          setTimeout(async () => {
+            try {
+              await supabase.from('profiles').upsert(profile, { onConflict: 'id' });
+            } catch (err) {
+              console.warn("Não foi possível salvar perfil:", err);
+            }
+          }, 100);
         } else if (!profileData) {
           console.log("Perfil não encontrado, criando localmente");
           profile = {
@@ -1150,7 +2774,7 @@
       }
     }
 
-    // Listener de auth
+    // Listener de auth simplificado
     supabase.auth.onAuthStateChange((event) => {
       console.log('Auth state changed:', event);
       
